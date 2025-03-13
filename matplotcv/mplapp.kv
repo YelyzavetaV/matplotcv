@@ -1,0 +1,73 @@
+#:kivy 2.0.0
+#:import kivy kivy
+
+
+<FileChooserContent>:
+    file_chooser: file_chooser
+    load_button: load_button
+    cancel_button: cancel_button
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        FileChooserIconView:
+            id: file_chooser
+            on_selection: root.load(file_chooser.selection)
+            icon_folder: 'images/folder_icon.png'
+            icon_file: 'images/file_icon_3.png'
+
+        BoxLayout:
+            height: 15
+            size_hint: 0.4, 0.1
+            spacing: 50
+            pos_hint: {'center_x': 0.5}
+
+            Button:
+                id: load_button
+                text: 'Load'
+                on_press: root.load(file_chooser.selection)
+            Button:
+                id: cancel_button
+                text: 'Cancel'
+                on_press: root.cancel()
+
+<MPLWidget>:
+    layout: layout
+
+    FloatLayout:
+        id: layout
+        size: root.size
+
+        Background:
+            id: background
+            size_hint: 1, 1
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            color: 1, 1, 1, 1
+
+        BoxLayout:
+            padding: 10
+            spacing: 30
+            size_hint: 0.25, 0.1
+            pos_hint: {'top': 1}
+            height: 24
+
+            Button:
+                id: load_image_button
+                on_press: root.on_load_image_button_press()
+                background_normal: 'images/file_icon_1.png'
+                background_down: 'images/file_icon_1.png'
+                border: 0, 0, 0, 0
+
+            Button:
+                id: bin_button
+                on_press: root.on_bin_button_press()
+                background_normal: 'images/bin_icon.png'
+                background_down: 'images/bin_icon.png'
+                border: 0, 0, 0, 0
+
+            Button:
+                id: tools_button
+                # on_press: root.on_load_image_button_press()
+                background_normal: 'images/tools_icon.png'
+                background_down: 'images/tools_icon.png'
+                border: 0, 0, 0, 0
