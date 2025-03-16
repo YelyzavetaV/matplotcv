@@ -1,11 +1,81 @@
+import os.path
+import warnings
 import numpy as np
 import cv2 as cv
 
+supported_exts = (
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".tiff",
+    ".tif",
+    ".bmp",
+    ".ppm",
+    ".pgm",
+    ".pbm",
+    ".webp",
+)
+
+sizes = {
+    "vga": (640, 480),
+    "hd": (1280, 720),
+    "fhd": (1920, 1080),
+    "4k": (3840, 2160),
+}
 
 class Pipeline:
     image = None
 
     def __init__(self, image: np.ndarray):
         self.image = image
-        self.h, self.w = self.image[0], self.image[1]
-        self.c = self.image[2] if self.image.ndim == 3 else 1
+        self.h, self.w = self.image.shape[0], self.image.shape[1]
+        self.c = self.image.shape[2] if self.image.ndim == 3 else 1
+
+        self.k = 0 # no blur
+
+    @classmethod
+    def from_file(cls, filename: str):
+        _, ext = os.path.splitext(filename)
+        if ext.lower() not in supported_exts:
+            raise ValueError(f"Unsupported file extension {ext}")
+
+        image = cv.imread(filename)
+
+        if image is not None:
+            return cls(image)
+
+    def resize(self, size: str):
+        aspect_ratio = self.w / self.h
+
+        try:
+            target_width, target_height = sizes[size]
+        except KeyError as e:
+            raise ValueError(f'Size "{size}" not supported') from e
+
+        if self.w >= self.h:
+            target_height = int(target_width / aspect_ratio)
+        else:
+            target_width = int(target_height * aspect_ratio)
+
+        if target_width > self.w:
+            warnings.warn('Cannot increase the size of the image')
+            return
+
+        self.image = cv.resize(self.image, (target_width, target_height))
+        self.h, self.w = self.image.shape[0], self.image.shape[1]
+
+    def gray(self):
+        self.image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
+
+    def blur(self, kind: str = "gaussian", n: int = 1, **kwargs):
+        match kind:
+            case "gaussian":
+                k = 3 + 2 * n
+                self.image = cv.GaussianBlur(self.image, (k, k), 0)
+            case _:
+                raise ValueError("Bad blur function")
+
+        self.k += k
+
+    def edges(self):
+        ...

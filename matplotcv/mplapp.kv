@@ -33,10 +33,13 @@
 
 <MPLWidget>:
     layout: layout
+    image: image
+    scatter: scatter
 
     FloatLayout:
         id: layout
         size: root.size
+        padding: (10, 10, 10, 50)
 
         Background:
             id: background
@@ -45,29 +48,138 @@
             color: 1, 1, 1, 1
 
         BoxLayout:
+            padding: (20, 50, 20, 50)
+
+            Scatter:
+                id: scatter
+                size_hint: None, None
+                size: root.size
+                do_rotation: False
+
+                Image:
+                    id: image
+                    opacity: 1
+                    size_hint: None, None
+                    size: root.size
+
+        BoxLayout:
             padding: 10
             spacing: 30
-            size_hint: 0.25, 0.1
             pos_hint: {'top': 1}
-            height: 24
+            size_hint: None, None
+            height: 120
+            width: 500
 
             Button:
                 id: load_image_button
-                on_press: root.on_load_image_button_press()
-                background_normal: 'images/file_icon_1.png'
-                background_down: 'images/file_icon_1.png'
+                on_release: root.on_load_image_button_press()
+                background_normal: 'images/new_file_icon_normal.png'
+                background_down: 'images/new_file_icon_down.png'
+                height: root.height
                 border: 0, 0, 0, 0
 
             Button:
                 id: bin_button
-                on_press: root.on_bin_button_press()
-                background_normal: 'images/bin_icon.png'
-                background_down: 'images/bin_icon.png'
+                on_release: root.clear_image_and_pipeline()
+                background_normal: 'images/bin_icon_normal.png'
+                background_down: 'images/bin_icon_down.png'
+                height: root.height
+                border: 0, 0, 0, 0
+
+            Button:
+                id: reduce_button
+                on_release: root.reduce_dropdown.open(self)
+                # on_release: root.reduce_dropdown.dismiss()
+                background_normal: 'images/reduce_icon_normal.png'
+                background_down: 'images/reduce_icon_down.png'
+                height: root.height
                 border: 0, 0, 0, 0
 
             Button:
                 id: tools_button
-                # on_press: root.on_load_image_button_press()
-                background_normal: 'images/tools_icon.png'
-                background_down: 'images/tools_icon.png'
+                on_release: root.tools_dropdown.open(self)
+                background_normal: 'images/tools_icon_normal.png'
+                background_down: 'images/tools_icon_down.png'
+                height: root.height
                 border: 0, 0, 0, 0
+
+        BoxLayout:
+            spacing: 30
+            pos_hint: {'center_x': 0.5, 'center_y': 0.05}
+            size_hint: None, None
+            height: 120
+            width: 250
+
+            Button:
+                id: zoomin_button
+                on_release: root.zoom(1.1)
+                background_normal: 'images/plus_icon_normal.png'
+                background_down: 'images/plus_icon_down.png'
+                border: 0, 0, 0, 0
+
+            Button:
+                id: zoomout_button
+                on_release: root.zoom(0.9)
+                background_normal: 'images/minus_icon_normal.png'
+                background_down: 'images/minus_icon_down.png'
+                border: 0, 0, 0, 0
+
+<ResizeDropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'VGA 640x480'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        on_release: root.select('vga')
+
+    Button:
+        text: 'HD 1280x720'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        on_release: root.select('hd')
+
+<ToolsDropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'Gray Scale'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('grayscale')
+
+    Button:
+        text: 'Blur'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.open_blur_dropdown(self)
+
+<BlurDropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'Gaussian'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('gaussian')

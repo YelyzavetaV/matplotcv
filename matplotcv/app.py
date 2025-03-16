@@ -9,6 +9,7 @@ from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
+from kivy.uix.dropdown import DropDown
 
 from kivy.properties import ObjectProperty
 
@@ -18,9 +19,10 @@ from kivy.clock import Clock
 
 from kivy.logger import Logger, LOG_LEVELS
 
+import exceptions
 from pipeline import Pipeline
 
-kivy.require('2.0.0')
+kivy.require('2.3.0')
 Logger.setLevel(LOG_LEVELS["debug"])
 
 
@@ -38,19 +40,44 @@ class FileChooserContent(BoxLayout):
         self.file_chooser.path = kwargs.get('path', os.path.expanduser('~'))
 
 
+class ResizeDropDown(DropDown):
+    pass
+
+
+class ToolsDropDown(DropDown):
+    blur_dropdown = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.blur_dropdown = BlurDropDown()
+
+    def open_blur_dropdown(self, button):
+        self.blur_dropdown.open(button)
+        pos = button.to_window(button.x, button.y, relative=True)
+        self.blur_dropdown.pos = (pos[0] + button.width, pos[1])
+
+
+class BlurDropDown(DropDown):
+    pass
+
+
 class MPLWidget(Widget):
     app = ObjectProperty()
     layout = ObjectProperty()
-
-    image = Image(opacity=0)
-
+    scatter = ObjectProperty()
+    image = ObjectProperty()
     pipelines = []  # Store active opencv states
     active_pipeline = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.layout.add_widget(self.image)
+        self.reduce_dropdown = ResizeDropDown()
+        self.reduce_dropdown.bind(on_select=self.reduce_image)
+
+        self.tools_dropdown = ToolsDropDown()
+        self.tools_dropdown.bind(on_select=self.gray_image)
+        self.tools_dropdown.blur_dropdown.bind(on_select=self.blur_image)
 
     def on_load_image_button_press(self):
         content = FileChooserContent(
@@ -67,16 +94,22 @@ class MPLWidget(Widget):
     def load_image_with_file_chooser(self, selection):
         if selection:  # Try loading file once confirmed with load button
             if self.file_chooser.content.load_button.state == 'down':
-                image = cv.imread(selection[0])
-                if image is not None:
-                    self.active_pipeline = Pipeline(image)
+                try:
+                    pipeline = Pipeline.from_file(selection[0])
+
+                    if pipeline is None:
+                        raise exceptions.ImageLoadError()
+
+                    self.active_pipeline = pipeline
 
                     self.pipelines.append(self.active_pipeline)
                     self.update_image()
 
                     # Sync at 30 FPS
                     Clock.schedule_interval(self.sync_texture, 1 / 30)
-
+                except Exception as e:
+                    raise e
+                finally:  # Cleanup
                     self.dismiss_file_chooser()
 
     def dismiss_file_chooser(self):
@@ -85,14 +118,23 @@ class MPLWidget(Widget):
     def update_image(self):
         image = self.active_pipeline.image
 
-        buff = cv.flip(image, 0).tostring()
+        match image.ndim:
+            case 2:  # Grayscale
+                colorfmt = 'luminance'
+            case 3:  # BGR
+                colorfmt = 'bgr'
+            case _:  # Should not happen
+                raise ValueError('Bad image shape')
+
+        buff = cv.flip(image, 0).tobytes()
         texture = Texture.create(
-            size=(image.shape[1], image.shape[0]), colorfmt='bgr'
+            size=(image.shape[1], image.shape[0]), colorfmt=colorfmt
         )
-        texture.blit_buffer(buff, colorfmt='bgr', bufferfmt='ubyte')
+        texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
         self.image.texture = texture
         self.image.opacity = 1
+        self.center_image()
 
     def sync_texture(self, interval):
         if self.active_pipeline is not None:
@@ -103,8 +145,33 @@ class MPLWidget(Widget):
         self.image.texture = None
         self.image.opacity = 0
 
-    def on_bin_button_press(self):
-        self.clear_image_and_pipeline()
+    ##############################
+    # Pipeline operations
+    ##############################
+    def reduce_image(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.resize(value)
+
+    def gray_image(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.gray()
+
+    def blur_image(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.blur(value)
+
+    ##############################
+    # Image operations
+    ##############################
+    def center_image(self):
+        if self.image.texture:
+            self.image.center_x = 0.5 * self.width
+            self.image.center_y = 0.5 * self.height
+
+    def zoom(self, factor):
+        self.scatter.scale *= factor
+        # self.center_image()
+
 
 class MPLApp(App):
     title = 'matplotcv'
