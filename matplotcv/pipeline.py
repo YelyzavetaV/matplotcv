@@ -100,11 +100,13 @@ class Pipeline:
         )
 
     def draw_contours(self, which: str = 'all'):
-        if self.contours is not None:
-            match which:
-                case 'all':
-                    idx = -1
-                case _:
-                    raise ValueError('Bad contour index')
+        if self.contours is None:
+            self.contour_tree()
 
-            cv.drawContours(self.original, self.contours, idx, (0, 255, 0), 3)
+        match which:
+            case 'all':
+                idx = -1
+            case _:
+                raise ValueError('Bad contour index')
+
+        cv.drawContours(self.original, self.contours, idx, (0, 255, 0), 3)

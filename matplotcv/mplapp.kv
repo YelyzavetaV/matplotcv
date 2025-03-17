@@ -157,7 +157,7 @@
 
 <ToolsDropDown>:
     auto_width: False
-    width: 200
+    width: 215
 
     Button:
         text: 'Gray Scale'
@@ -190,14 +190,14 @@
         on_release: root.open_detect_edges_dropdown(self)
 
     Button:
-        text: 'Find Contours'
+        text: 'Draw Contours'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_find_contours_dropdown(self)
+        on_release: root.open_draw_contours_dropdown(self)
 
 <BlurDropDown>:
     auto_width: False
@@ -227,7 +227,7 @@
         padding: (5, 0)
         on_release: root.select('canny')
 
-<FindContoursDropDown>:
+<DrawContoursDropDown>:
     auto_width: False
     width: 200
 

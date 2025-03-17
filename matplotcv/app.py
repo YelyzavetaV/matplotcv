@@ -47,13 +47,13 @@ class ResizeDropDown(DropDown):
 class ToolsDropDown(DropDown):
     blur_dropdown = ObjectProperty()
     detect_edges_dropdown = ObjectProperty()
-    find_contours_dropdown = ObjectProperty()
+    draw_contours_dropdown = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.blur_dropdown = BlurDropDown()
         self.detect_edges_dropdown = DetectEdgesDropDown()
-        self.find_contours_dropdown = FindContoursDropDown()
+        self.draw_contours_dropdown = DrawContoursDropDown()
 
     def open_blur_dropdown(self, button):
         self.blur_dropdown.open(button)
@@ -65,10 +65,10 @@ class ToolsDropDown(DropDown):
         pos = button.to_window(button.x, button.y, relative=True)
         self.detect_edges_dropdown.pos = (pos[0] + button.width, pos[1])
 
-    def open_find_contours_dropdown(self, button):
-        self.find_contours_dropdown.open(button)
+    def open_draw_contours_dropdown(self, button):
+        self.draw_contours_dropdown.open(button)
         pos = button.to_window(button.x, button.y, relative=True)
-        self.find_contours_dropdown.pos = (pos[0] + button.width, pos[1])
+        self.draw_contours_dropdown.pos = (pos[0] + button.width, pos[1])
 
 
 class BlurDropDown(DropDown):
@@ -79,7 +79,7 @@ class DetectEdgesDropDown(DropDown):
     pass
 
 
-class FindContoursDropDown(DropDown):
+class DrawContoursDropDown(DropDown):
     pass
 
 
@@ -104,8 +104,8 @@ class MPLWidget(Widget):
         self.tools_dropdown.detect_edges_dropdown.bind(
             on_select=self.detect_edges
         )
-        self.tools_dropdown.find_contours_dropdown.bind(
-            on_select=self.find_contours
+        self.tools_dropdown.draw_contours_dropdown.bind(
+            on_select=self.draw_contours
         )
 
     def on_load_image_button_press(self):
@@ -203,9 +203,8 @@ class MPLWidget(Widget):
         if self.active_pipeline is not None:
             self.active_pipeline.edges(value)
 
-    def find_contours(self, instance, value):
+    def draw_contours(self, instance, value):
         if self.active_pipeline is not None:
-            self.active_pipeline.contour_tree()
             self.active_pipeline.draw_contours(value)
 
 
