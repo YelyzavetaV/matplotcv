@@ -23,7 +23,7 @@ import exceptions
 from pipeline import Pipeline
 
 kivy.require('2.3.0')
-Logger.setLevel(LOG_LEVELS["debug"])
+Logger.setLevel(LOG_LEVELS['debug'])
 
 
 class Background(Image):
@@ -68,6 +68,7 @@ class MPLWidget(Widget):
     image = ObjectProperty()
     pipelines = []  # Store active opencv states
     active_pipeline = None
+    original_image_toggle = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -90,6 +91,13 @@ class MPLWidget(Widget):
             # background='',
         )
         self.file_chooser.open()
+
+    def on_original_image_toggle_press(self):
+        if self.original_image_toggle.state == 'down':
+            self.app.config.set('General', 'show_pipeline', 'On')
+        else:
+            self.app.config.set('General', 'show_pipeline', 'Off')
+        self.app.config.write()
 
     def load_image_with_file_chooser(self, selection):
         if selection:  # Try loading file once confirmed with load button
@@ -116,7 +124,9 @@ class MPLWidget(Widget):
         self.file_chooser.dismiss()
 
     def update_image(self):
-        image = self.active_pipeline.image
+        show_pipeline = self.app.config.get('General', 'show_pipeline') == 'On'
+        image = (self.active_pipeline.image
+                 if show_pipeline else self.active_pipeline.original)
 
         match image.ndim:
             case 2:  # Grayscale
@@ -127,9 +137,8 @@ class MPLWidget(Widget):
                 raise ValueError('Bad image shape')
 
         buff = cv.flip(image, 0).tobytes()
-        texture = Texture.create(
-            size=(image.shape[1], image.shape[0]), colorfmt=colorfmt
-        )
+        texture = Texture.create(size=(image.shape[1], image.shape[0]),
+                                 colorfmt=colorfmt)
         texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
         self.image.texture = texture
@@ -182,17 +191,26 @@ class MPLApp(App):
 
     def build_config(self, config):
         config.adddefaultsection('General')
+        config.setdefault('General', 'show_pipeline', 'On')
 
         config.adddefaultsection('Visuals')
 
     def build_settings(self, settings):
-        settings.add_json_panel(
-            'General', self.config, data='''
+        settings.add_json_panel('General',
+                                self.config,
+                                data='''
             [
-                {"type": "title", "title": "General"}
+                {'type': 'title', 'title': 'General'},
+                {
+                'type': 'bool',
+                'title': 'Show pipeline',
+                'desc': 'Show/hide the pipeline modifications',
+                'section': 'General',
+                'key': 'show_pipeline',
+                'values': ['On', 'Off']
+                },
             ]
-            '''
-        )
+            ''')
 
 
 if __name__ == '__main__':

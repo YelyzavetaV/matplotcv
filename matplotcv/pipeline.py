@@ -4,40 +4,42 @@ import numpy as np
 import cv2 as cv
 
 supported_exts = (
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".tiff",
-    ".tif",
-    ".bmp",
-    ".ppm",
-    ".pgm",
-    ".pbm",
-    ".webp",
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.tiff',
+    '.tif',
+    '.bmp',
+    '.ppm',
+    '.pgm',
+    '.pbm',
+    '.webp',
 )
 
 sizes = {
-    "vga": (640, 480),
-    "hd": (1280, 720),
-    "fhd": (1920, 1080),
-    "4k": (3840, 2160),
+    'vga': (640, 480),
+    'hd': (1280, 720),
+    'fhd': (1920, 1080),
+    '4k': (3840, 2160),
 }
+
 
 class Pipeline:
     image = None
 
     def __init__(self, image: np.ndarray):
-        self.image = image
+        self.original = image
+        self.image = image.copy()
         self.h, self.w = self.image.shape[0], self.image.shape[1]
         self.c = self.image.shape[2] if self.image.ndim == 3 else 1
 
-        self.k = 0 # no blur
+        self.k = 0  # no blur
 
     @classmethod
     def from_file(cls, filename: str):
         _, ext = os.path.splitext(filename)
         if ext.lower() not in supported_exts:
-            raise ValueError(f"Unsupported file extension {ext}")
+            raise ValueError(f'Unsupported file extension {ext}')
 
         image = cv.imread(filename)
 
@@ -67,13 +69,13 @@ class Pipeline:
     def gray(self):
         self.image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
 
-    def blur(self, kind: str = "gaussian", n: int = 1, **kwargs):
+    def blur(self, kind: str = 'gaussian', n: int = 1, **kwargs):
         match kind:
-            case "gaussian":
+            case 'gaussian':
                 k = 3 + 2 * n
                 self.image = cv.GaussianBlur(self.image, (k, k), 0)
             case _:
-                raise ValueError("Bad blur function")
+                raise ValueError('Bad blur function')
 
         self.k += k
 

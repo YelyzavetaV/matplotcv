@@ -35,6 +35,7 @@
     layout: layout
     image: image
     scatter: scatter
+    original_image_toggle: original_image_toggle
 
     FloatLayout:
         id: layout
@@ -108,20 +109,28 @@
             pos_hint: {'center_x': 0.5, 'center_y': 0.05}
             size_hint: None, None
             height: 120
-            width: 275
+            width: 400
 
             Button:
-                id: zoomin_button
+                id: zoom_in_button
                 on_release: root.zoom(1.1)
                 background_normal: 'images/plus_icon_normal.png'
                 background_down: 'images/plus_icon_down.png'
                 border: 0, 0, 0, 0
 
             Button:
-                id: zoomout_button
+                id: zoom_out_button
                 on_release: root.zoom(0.9)
                 background_normal: 'images/minus_icon_normal.png'
                 background_down: 'images/minus_icon_down.png'
+                border: 0, 0, 0, 0
+
+            ToggleButton:
+                id: original_image_toggle
+                background_normal: 'images/toggle_off.png'
+                background_down: 'images/toggle_on.png'
+                on_press: root.on_original_image_toggle_press()
+                state: 'down' if root.app.config.get('General', 'show_pipeline') == 'On' else 'normal'
                 border: 0, 0, 0, 0
 
 <ResizeDropDown>:
