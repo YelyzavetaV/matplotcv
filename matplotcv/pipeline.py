@@ -69,7 +69,7 @@ class Pipeline:
     def gray(self):
         self.image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
 
-    def blur(self, kind: str = 'gaussian', n: int = 1, **kwargs):
+    def blur(self, kind: str = 'gaussian', n: int = 1):
         match kind:
             case 'gaussian':
                 k = 3 + 2 * n
@@ -79,5 +79,15 @@ class Pipeline:
 
         self.k += k
 
-    def edges(self):
-        ...
+    def edges(self, kind: str = 'canny'):
+        match kind:
+            case 'canny':
+                # Automatic thresholding based on median
+                sigma = 0.33
+                m = np.median(self.image)
+                lower = int(max(0, (1.0 - sigma) * m))
+                upper = int(min(255, (1.0 + sigma) * m))
+
+                self.image = cv.Canny(self.image, lower, upper)
+            case _:
+                raise ValueError('Bad edge detection function')

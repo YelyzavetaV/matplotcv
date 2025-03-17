@@ -179,6 +179,16 @@
         padding: (5, 0)
         on_release: root.open_blur_dropdown(self)
 
+    Button:
+        text: 'Detect Edges'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.open_detect_edges_dropdown(self)
+
 <BlurDropDown>:
     auto_width: False
     width: 200
@@ -192,3 +202,17 @@
         valign: 'middle'
         padding: (5, 0)
         on_release: root.select('gaussian')
+
+<DetectEdgesDropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'Canny'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('canny')

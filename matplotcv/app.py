@@ -46,18 +46,29 @@ class ResizeDropDown(DropDown):
 
 class ToolsDropDown(DropDown):
     blur_dropdown = ObjectProperty()
+    detect_edges_dropdown = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.blur_dropdown = BlurDropDown()
+        self.detect_edges_dropdown = DetectEdgesDropDown()
 
     def open_blur_dropdown(self, button):
         self.blur_dropdown.open(button)
         pos = button.to_window(button.x, button.y, relative=True)
         self.blur_dropdown.pos = (pos[0] + button.width, pos[1])
 
+    def open_detect_edges_dropdown(self, button):
+        self.detect_edges_dropdown.open(button)
+        pos = button.to_window(button.x, button.y, relative=True)
+        self.detect_edges_dropdown.pos = (pos[0] + button.width, pos[1])
+
 
 class BlurDropDown(DropDown):
+    pass
+
+
+class DetectEdgesDropDown(DropDown):
     pass
 
 
@@ -79,6 +90,9 @@ class MPLWidget(Widget):
         self.tools_dropdown = ToolsDropDown()
         self.tools_dropdown.bind(on_select=self.gray_image)
         self.tools_dropdown.blur_dropdown.bind(on_select=self.blur_image)
+        self.tools_dropdown.detect_edges_dropdown.bind(
+            on_select=self.detect_edges
+        )
 
     def on_load_image_button_press(self):
         content = FileChooserContent(
@@ -163,11 +177,17 @@ class MPLWidget(Widget):
 
     def gray_image(self, instance, value):
         if self.active_pipeline is not None:
-            self.active_pipeline.gray()
+            image = self.active_pipeline.image
+            if image.ndim == 3:
+                self.active_pipeline.gray()
 
     def blur_image(self, instance, value):
         if self.active_pipeline is not None:
             self.active_pipeline.blur(value)
+
+    def detect_edges(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.edges(value)
 
     ##############################
     # Image operations
