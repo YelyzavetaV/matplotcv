@@ -34,6 +34,8 @@ class Pipeline:
         self.c = self.image.shape[2] if self.image.ndim == 3 else 1
 
         self.k = 0  # no blur
+        self.contours = None
+        self.hierarchy = None
 
     @classmethod
     def from_file(cls, filename: str):
@@ -91,3 +93,18 @@ class Pipeline:
                 self.image = cv.Canny(self.image, lower, upper)
             case _:
                 raise ValueError('Bad edge detection function')
+
+    def contour_tree(self):
+        self.contours, self.hierarchy = cv.findContours(
+            self.image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+        )
+
+    def draw_contours(self, which: str = 'all'):
+        if self.contours is not None:
+            match which:
+                case 'all':
+                    idx = -1
+                case _:
+                    raise ValueError('Bad contour index')
+
+            cv.drawContours(self.original, self.contours, idx, (0, 255, 0), 3)
