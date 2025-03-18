@@ -50,12 +50,18 @@ class DetectEdgesDropDown(DropDown):
 
 class DrawDropDown(DropDown):
     draw_contours_dropdown = ObjectProperty()
+    clear_contours_dropdown = ObjectProperty()
     open_nested_dropdown = staticmethod(open_nested_dropdown)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.draw_contours_dropdown = DrawContoursDropDown()
+        self.clear_contours_dropdown = ClearContoursDropDown()
 
 
 class DrawContoursDropDown(DropDown):
+    pass
+
+
+class ClearContoursDropDown(DropDown):
     pass

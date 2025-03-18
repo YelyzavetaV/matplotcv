@@ -45,6 +45,9 @@ class MPLWidget(Widget):
         self.draw_dropdown.draw_contours_dropdown.bind(
             on_select=self.draw_contours
         )
+        self.draw_dropdown.clear_contours_dropdown.bind(
+            on_select=self.clear_contours
+        )
 
     def on_load_image_button_press(self):
         content = FileChooserContent(
@@ -93,7 +96,7 @@ class MPLWidget(Widget):
         show_pipeline = self.app.config.get('General', 'show_pipeline') == 'On'
         image = (
             self.active_pipeline.image
-            if show_pipeline else self.active_pipeline.original
+            if show_pipeline else self.active_pipeline.original_with_contours
         )
 
         match image.ndim:
@@ -148,6 +151,10 @@ class MPLWidget(Widget):
         if self.active_pipeline is not None:
             self.active_pipeline.draw_contours(value)
 
+    def clear_contours(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.clear_contours(value)
+
     ##############################
     # Image operations
     ##############################
@@ -162,7 +169,7 @@ class MPLWidget(Widget):
 
 
 class MPLApp(App):
-    title = 'matplotcv'
+    title = 'MPLCV'
 
     def build(self):
         self.mpl_widget = MPLWidget(app=self)

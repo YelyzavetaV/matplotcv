@@ -28,9 +28,9 @@ class Pipeline:
     image = None
 
     def __init__(self, image: np.ndarray):
-        self.original = image
-        self.original_with_contours = image[:]
-        self.image = image[:]
+        self._original = image
+        self.original_with_contours = image.copy()
+        self.image = image.copy()
 
         self.h, self.w = self.image.shape[0], self.image.shape[1]
         self.c = self.image.shape[2] if self.image.ndim == 3 else 1
@@ -51,6 +51,10 @@ class Pipeline:
 
         if image is not None:
             return cls(image)
+
+    @property
+    def original(self):
+        return self._original
 
     def resize(self, size: str):
         aspect_ratio = self.w / self.h
@@ -121,3 +125,13 @@ class Pipeline:
         cv.drawContours(
             self.original_with_contours, self.contours, idx, (0, 255, 0), 3
         )
+
+    def clear_contours(self, which: str = 'all'):
+        self.original_with_contours = self.original.copy()
+
+        match which:
+            case 'all':
+                self.contours = []
+                self.hierarchy = []
+            case _:  # TODO: Redraw contours
+                raise ValueError('Bad contour index')
