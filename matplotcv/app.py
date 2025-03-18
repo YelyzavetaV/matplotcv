@@ -1,24 +1,18 @@
 import cv2 as cv
 
 import kivy
-
 from kivy.app import App
-
 from kivy.uix.widget import Widget
 from kivy.uix.popup import Popup
-
 from kivy.properties import ObjectProperty
-
 from kivy.graphics.texture import Texture
-
 from kivy.clock import Clock
-
 from kivy.logger import Logger, LOG_LEVELS
 
 import exceptions
 from pipeline import Pipeline
 from components import (
-    FileChooserContent, ResizeDropDown, ToolsDropDown, DrawContoursDropDown
+    FileChooserContent, ResizeDropDown, ToolsDropDown, DrawDropDown
 )
 
 kivy.require('2.3.0')
@@ -47,8 +41,10 @@ class MPLWidget(Widget):
             on_select=self.detect_edges
         )
 
-        self.draw_contours_dropdown = DrawContoursDropDown()
-        self.draw_contours_dropdown.bind(on_select=self.draw_contours)
+        self.draw_dropdown = DrawDropDown()
+        self.draw_dropdown.draw_contours_dropdown.bind(
+            on_select=self.draw_contours
+        )
 
     def on_load_image_button_press(self):
         content = FileChooserContent(

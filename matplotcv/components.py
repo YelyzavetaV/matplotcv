@@ -19,6 +19,12 @@ class FileChooserContent(BoxLayout):
         self.file_chooser.path = kwargs.get('path', os.path.expanduser('~'))
 
 
+def open_nested_dropdown(dropdown, button):
+    dropdown.open(button)
+    pos = button.to_window(button.x, button.y, relative=True)
+    dropdown.pos = (pos[0] + button.width, pos[1])
+
+
 class ResizeDropDown(DropDown):
     pass
 
@@ -26,17 +32,12 @@ class ResizeDropDown(DropDown):
 class ToolsDropDown(DropDown):
     blur_dropdown = ObjectProperty()
     detect_edges_dropdown = ObjectProperty()
+    open_nested_dropdown = staticmethod(open_nested_dropdown)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.blur_dropdown = BlurDropDown()
         self.detect_edges_dropdown = DetectEdgesDropDown()
-
-    @staticmethod
-    def open_nested_dropdown(dropdown, button):
-        dropdown.open(button)
-        pos = button.to_window(button.x, button.y, relative=True)
-        dropdown.pos = (pos[0] + button.width, pos[1])
 
 
 class BlurDropDown(DropDown):
@@ -45,6 +46,15 @@ class BlurDropDown(DropDown):
 
 class DetectEdgesDropDown(DropDown):
     pass
+
+
+class DrawDropDown(DropDown):
+    draw_contours_dropdown = ObjectProperty()
+    open_nested_dropdown = staticmethod(open_nested_dropdown)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.draw_contours_dropdown = DrawContoursDropDown()
 
 
 class DrawContoursDropDown(DropDown):
