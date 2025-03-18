@@ -1,15 +1,11 @@
-import os.path
 import cv2 as cv
 
 import kivy
 
 from kivy.app import App
 
-from kivy.uix.image import Image
 from kivy.uix.widget import Widget
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
-from kivy.uix.dropdown import DropDown
 
 from kivy.properties import ObjectProperty
 
@@ -21,66 +17,12 @@ from kivy.logger import Logger, LOG_LEVELS
 
 import exceptions
 from pipeline import Pipeline
+from components import (
+    FileChooserContent, ResizeDropDown, ToolsDropDown, DrawContoursDropDown
+)
 
 kivy.require('2.3.0')
 Logger.setLevel(LOG_LEVELS['debug'])
-
-
-class Background(Image):
-    pass
-
-
-class FileChooserContent(BoxLayout):
-    file_chooser = ObjectProperty()
-    load = ObjectProperty()
-    cancel = ObjectProperty()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.file_chooser.path = kwargs.get('path', os.path.expanduser('~'))
-
-
-class ResizeDropDown(DropDown):
-    pass
-
-
-class ToolsDropDown(DropDown):
-    blur_dropdown = ObjectProperty()
-    detect_edges_dropdown = ObjectProperty()
-    draw_contours_dropdown = ObjectProperty()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.blur_dropdown = BlurDropDown()
-        self.detect_edges_dropdown = DetectEdgesDropDown()
-        self.draw_contours_dropdown = DrawContoursDropDown()
-
-    def open_blur_dropdown(self, button):
-        self.blur_dropdown.open(button)
-        pos = button.to_window(button.x, button.y, relative=True)
-        self.blur_dropdown.pos = (pos[0] + button.width, pos[1])
-
-    def open_detect_edges_dropdown(self, button):
-        self.detect_edges_dropdown.open(button)
-        pos = button.to_window(button.x, button.y, relative=True)
-        self.detect_edges_dropdown.pos = (pos[0] + button.width, pos[1])
-
-    def open_draw_contours_dropdown(self, button):
-        self.draw_contours_dropdown.open(button)
-        pos = button.to_window(button.x, button.y, relative=True)
-        self.draw_contours_dropdown.pos = (pos[0] + button.width, pos[1])
-
-
-class BlurDropDown(DropDown):
-    pass
-
-
-class DetectEdgesDropDown(DropDown):
-    pass
-
-
-class DrawContoursDropDown(DropDown):
-    pass
 
 
 class MPLWidget(Widget):
@@ -104,9 +46,9 @@ class MPLWidget(Widget):
         self.tools_dropdown.detect_edges_dropdown.bind(
             on_select=self.detect_edges
         )
-        self.tools_dropdown.draw_contours_dropdown.bind(
-            on_select=self.draw_contours
-        )
+
+        self.draw_contours_dropdown = DrawContoursDropDown()
+        self.draw_contours_dropdown.bind(on_select=self.draw_contours)
 
     def on_load_image_button_press(self):
         content = FileChooserContent(
@@ -153,8 +95,10 @@ class MPLWidget(Widget):
 
     def update_image(self):
         show_pipeline = self.app.config.get('General', 'show_pipeline') == 'On'
-        image = (self.active_pipeline.image
-                 if show_pipeline else self.active_pipeline.original)
+        image = (
+            self.active_pipeline.image
+            if show_pipeline else self.active_pipeline.original
+        )
 
         match image.ndim:
             case 2:  # Grayscale
@@ -165,8 +109,9 @@ class MPLWidget(Widget):
                 raise ValueError('Bad image shape')
 
         buff = cv.flip(image, 0).tobytes()
-        texture = Texture.create(size=(image.shape[1], image.shape[0]),
-                                 colorfmt=colorfmt)
+        texture = Texture.create(
+            size=(image.shape[1], image.shape[0]), colorfmt=colorfmt
+        )
         texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
         self.image.texture = texture
@@ -207,7 +152,6 @@ class MPLWidget(Widget):
         if self.active_pipeline is not None:
             self.active_pipeline.draw_contours(value)
 
-
     ##############################
     # Image operations
     ##############################
@@ -235,9 +179,10 @@ class MPLApp(App):
         config.adddefaultsection('Visuals')
 
     def build_settings(self, settings):
-        settings.add_json_panel('General',
-                                self.config,
-                                data='''
+        settings.add_json_panel(
+            'General',
+            self.config,
+            data='''
             [
                 {'type': 'title', 'title': 'General'},
                 {
@@ -249,7 +194,8 @@ class MPLApp(App):
                 'values': ['On', 'Off']
                 },
             ]
-            ''')
+            '''
+        )
 
 
 if __name__ == '__main__':

@@ -1,36 +1,6 @@
 #:kivy 2.0.0
 #:import kivy kivy
 
-
-<FileChooserContent>:
-    file_chooser: file_chooser
-    load_button: load_button
-    cancel_button: cancel_button
-
-    BoxLayout:
-        orientation: 'vertical'
-
-        FileChooserIconView:
-            id: file_chooser
-            on_selection: root.load(file_chooser.selection)
-            icon_folder: 'images/folder_icon.png'
-            icon_file: 'images/file_icon_3.png'
-
-        BoxLayout:
-            height: 15
-            size_hint: 0.4, 0.1
-            spacing: 50
-            pos_hint: {'center_x': 0.5}
-
-            Button:
-                id: load_button
-                text: 'Load'
-                on_press: root.load(file_chooser.selection)
-            Button:
-                id: cancel_button
-                text: 'Cancel'
-                on_press: root.cancel()
-
 <MPLWidget>:
     layout: layout
     image: image
@@ -69,7 +39,7 @@
             pos_hint: {'top': 1}
             size_hint: None, None
             height: 120
-            width: 500
+            width: 800
 
             Button:
                 id: load_image_button
@@ -77,6 +47,7 @@
                 background_normal: 'images/new_file_icon_normal.png'
                 background_down: 'images/new_file_icon_down.png'
                 height: root.height
+                width: 100
                 border: 0, 0, 0, 0
 
             Button:
@@ -85,6 +56,7 @@
                 background_normal: 'images/bin_icon_normal.png'
                 background_down: 'images/bin_icon_down.png'
                 height: root.height
+                width: 100
                 border: 0, 0, 0, 0
 
             Button:
@@ -94,6 +66,16 @@
                 background_normal: 'images/reduce_icon_normal.png'
                 background_down: 'images/reduce_icon_down.png'
                 height: root.height
+                width: 100
+                border: 0, 0, 0, 0
+
+            Button:
+                id: draw_button
+                on_release: root.draw_contours_dropdown.open(self)
+                background_normal: 'images/draw_icon_normal.png'
+                background_down: 'images/draw_icon_down.png'
+                height: root.height
+                width: 100
                 border: 0, 0, 0, 0
 
             Button:
@@ -102,14 +84,50 @@
                 background_normal: 'images/tools_icon_normal.png'
                 background_down: 'images/tools_icon_down.png'
                 height: root.height
+                width: 100
                 border: 0, 0, 0, 0
+
+            Widget:
+                size_hint: None, None
+                width: 10
+                height: 90
+                canvas:
+                    Color:
+                        rgba: 0, 0, 0, 1
+                    Line:
+                        points: self.center_x, self.y, self.center_x, self.top
+                        width: 2
+
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: None, None
+                width: 90
+                height: 120
+
+                ToggleButton:
+                    id: original_image_toggle
+                    background_normal: 'images/toggle_off_icon.png'
+                    background_down: 'images/toggle_on_icon.png'
+                    on_press: root.on_original_image_toggle_press()
+                    state: 'down' if root.app.config.get('General', 'show_pipeline') == 'On' else 'normal'
+                    height: 80
+                    border: 0, 0, 0, 0
+
+                Label:
+                    text: 'Show\nPipeline'
+                    size_hint_y: None
+                    height: 40
+                    halign: 'center'
+                    valign: 'middle'
+                    font_size: 24
+                    color: 0, 0, 0, 1
 
         BoxLayout:
             spacing: 30
             pos_hint: {'center_x': 0.5, 'center_y': 0.05}
             size_hint: None, None
             height: 120
-            width: 400
+            width: 275
 
             Button:
                 id: zoom_in_button
@@ -125,13 +143,34 @@
                 background_down: 'images/minus_icon_down.png'
                 border: 0, 0, 0, 0
 
-            ToggleButton:
-                id: original_image_toggle
-                background_normal: 'images/toggle_off.png'
-                background_down: 'images/toggle_on.png'
-                on_press: root.on_original_image_toggle_press()
-                state: 'down' if root.app.config.get('General', 'show_pipeline') == 'On' else 'normal'
-                border: 0, 0, 0, 0
+<FileChooserContent>:
+    file_chooser: file_chooser
+    load_button: load_button
+    cancel_button: cancel_button
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        FileChooserIconView:
+            id: file_chooser
+            on_selection: root.load(file_chooser.selection)
+            icon_folder: 'images/folder_icon.png'
+            icon_file: 'images/file_icon_3.png'
+
+        BoxLayout:
+            height: 15
+            size_hint: 0.4, 0.1
+            spacing: 50
+            pos_hint: {'center_x': 0.5}
+
+            Button:
+                id: load_button
+                text: 'Load'
+                on_press: root.load(file_chooser.selection)
+            Button:
+                id: cancel_button
+                text: 'Cancel'
+                on_press: root.cancel()
 
 <ResizeDropDown>:
     auto_width: False
@@ -157,7 +196,7 @@
 
 <ToolsDropDown>:
     auto_width: False
-    width: 215
+    width: 275
 
     Button:
         text: 'Gray Scale'
@@ -170,34 +209,24 @@
         on_release: root.select('grayscale')
 
     Button:
-        text: 'Blur'
+        text: 'Blur...'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_blur_dropdown(self)
+        on_release: root.open_nested_dropdown(root.blur_dropdown, self)
 
     Button:
-        text: 'Detect Edges'
+        text: 'Detect Edges...'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_detect_edges_dropdown(self)
-
-    Button:
-        text: 'Draw Contours'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.open_draw_contours_dropdown(self)
+        on_release: root.open_nested_dropdown(root.detect_edges_dropdown, self)
 
 <BlurDropDown>:
     auto_width: False
@@ -229,10 +258,10 @@
 
 <DrawContoursDropDown>:
     auto_width: False
-    width: 200
+    width: 250
 
     Button:
-        text: 'All'
+        text: 'Draw Contours...'
         height: 50
         size_hint_y: None
         text_size: self.size

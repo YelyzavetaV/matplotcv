@@ -29,13 +29,17 @@ class Pipeline:
 
     def __init__(self, image: np.ndarray):
         self.original = image
-        self.image = image.copy()
+        self.original_with_contours = image[:]
+        self.image = image[:]
+
         self.h, self.w = self.image.shape[0], self.image.shape[1]
         self.c = self.image.shape[2] if self.image.ndim == 3 else 1
+        self.edges_detected = False
 
         self.k = 0  # no blur
-        self.contours = None
-        self.hierarchy = None
+
+        self.contours = []
+        self.hierarchy = []
 
     @classmethod
     def from_file(cls, filename: str):
@@ -94,13 +98,18 @@ class Pipeline:
             case _:
                 raise ValueError('Bad edge detection function')
 
+        self.edges_detected = True
+
     def contour_tree(self):
         self.contours, self.hierarchy = cv.findContours(
             self.image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
         )
 
     def draw_contours(self, which: str = 'all'):
-        if self.contours is None:
+        if not self.edges_detected:
+            self.edges()
+
+        if not self.contours:
             self.contour_tree()
 
         match which:
@@ -109,4 +118,6 @@ class Pipeline:
             case _:
                 raise ValueError('Bad contour index')
 
-        cv.drawContours(self.original, self.contours, idx, (0, 255, 0), 3)
+        cv.drawContours(
+            self.original_with_contours, self.contours, idx, (0, 255, 0), 3
+        )
