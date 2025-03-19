@@ -10,7 +10,7 @@
     FloatLayout:
         id: layout
         size: root.size
-        padding: (10, 10, 10, 50)
+        # padding: (10, 10, 10, 50)
 
         Background:
             id: background
@@ -18,20 +18,16 @@
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             color: 1, 1, 1, 1
 
-        BoxLayout:
-            padding: (20, 50, 20, 50)
+        Scatter:
+            id: scatter
+            size_hint: None, None
+            size: root.size
+            do_rotation: False
 
-            Scatter:
-                id: scatter
+            Image:
+                id: image
                 size_hint: None, None
                 size: root.size
-                do_rotation: False
-
-                Image:
-                    id: image
-                    opacity: 1
-                    size_hint: None, None
-                    size: root.size
 
         BoxLayout:
             padding: 10
@@ -260,52 +256,24 @@
 
 <DrawDropDown>:
     auto_width: False
-    width: 250
+    width: 225
 
     Button:
-        text: 'Draw Contours...'
+        text: 'Draw Contours'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_nested_dropdown(root.draw_contours_dropdown, self)
+        on_release: root.select('draw')
 
     Button:
-        text: 'Clear Contours...'
+        text: 'Clear Contours'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_nested_dropdown(root.clear_contours_dropdown, self)
-
-<DrawContoursDropDown>:
-    auto_width: False
-    width: 200
-
-    Button:
-        text: 'All'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.select('all')
-
-<ClearContoursDropDown>:
-    auto_width: False
-    width: 200
-
-    Button:
-        text: 'All'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.select('all')
+        on_release: root.select('clear')

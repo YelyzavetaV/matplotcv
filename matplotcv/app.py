@@ -54,10 +54,10 @@ class MPLWidget(Widget):
         )
 
         self.draw_dropdown = DrawDropDown()
-        self.draw_dropdown.draw_contours_dropdown.bind(
+        self.draw_dropdown.bind(
             on_select=lambda i, v: self.draw_contours()
         )
-        self.draw_dropdown.clear_contours_dropdown.bind(
+        self.draw_dropdown.bind(
             on_select=lambda i, v: self.clear_contours()
         )
 
@@ -130,17 +130,18 @@ class MPLWidget(Widget):
             texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
             self.image.texture = texture
-            self.image.opacity = 1
+            self.image.size = (image.shape[1], image.shape[0])
             self.center_image()
 
     def center_image(self):
         if self.image.texture:
-            self.image.center_x = 0.5 * self.width
-            self.image.center_y = 0.5 * self.height
+            self.image.pos = (
+                0.5 * (self.width - self.image.width),
+                0.5 * (self.height - self.image.height),
+            )
 
     def zoom(self, factor):
         self.scatter.scale *= factor
-        # self.center_image()
 
     def draw_contours(self):
         '''Draw OpenCV contours as widgets'''
@@ -186,6 +187,9 @@ class MPLApp(App):
     title = 'MPLCV'
 
     def build(self):
+        Window.minimum_width = self.config.getint('Graphics', 'min_width')
+        Window.minimum_height = self.config.getint('Graphics', 'min_height')
+
         self.mpl_widget = MPLWidget(app=self)
         return self.mpl_widget
 
@@ -193,7 +197,9 @@ class MPLApp(App):
         config.adddefaultsection('General')
         config.setdefault('General', 'show_pipeline', 'Off')
 
-        config.adddefaultsection('Visuals')
+        config.adddefaultsection('Graphics')
+        config.setdefault('Graphics', 'min_width', 800)
+        config.setdefault('Graphics', 'min_height', 600)
 
     def build_settings(self, settings):
         settings.add_json_panel(
@@ -210,6 +216,16 @@ class MPLApp(App):
                 'key': 'show_pipeline',
                 'values': ['On', 'Off']
                 },
+            ]
+            '''
+        )
+
+        settings.add_json_panel(
+            'Graphics',
+            self.config,
+            data='''
+            [
+                {'type': 'title', 'title': 'Graphics'},
             ]
             '''
         )
