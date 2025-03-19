@@ -1,6 +1,7 @@
 import cv2 as cv
 
 import kivy
+from kivy.core.window import Window
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.popup import Popup
@@ -14,6 +15,7 @@ from pipeline import Pipeline
 from components import (
     FileChooserContent, ResizeDropDown, ToolsDropDown, DrawDropDown
 )
+from contour import Contour
 
 kivy.require('2.3.0')
 Logger.setLevel(LOG_LEVELS['debug'])
@@ -24,31 +26,44 @@ class MPLWidget(Widget):
     layout = ObjectProperty()
     scatter = ObjectProperty()
     image = ObjectProperty()
-    pipelines = []  # Store active opencv states
-    active_pipeline = None
     original_image_toggle = ObjectProperty()
+    pipeline = Pipeline()
+    contours = []
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        Window.bind(
+            on_resize=(
+                lambda i, w, h: self.draw_contours() if self.contours else None
+            )
+        )
+
         self.reduce_dropdown = ResizeDropDown()
-        self.reduce_dropdown.bind(on_select=self.resize_image)
+        self.reduce_dropdown.bind(
+            on_select=lambda i, v: self.pipeline.resize(v)
+        )
 
         self.tools_dropdown = ToolsDropDown()
-        self.tools_dropdown.bind(on_select=self.gray_image)
-        self.tools_dropdown.blur_dropdown.bind(on_select=self.blur_image)
+        self.tools_dropdown.bind(on_select=lambda i, v: self.pipeline.gray())
+        self.tools_dropdown.blur_dropdown.bind(
+            on_select=lambda i, v: self.pipeline.blur(v)
+        )
         self.tools_dropdown.detect_edges_dropdown.bind(
-            on_select=self.detect_edges
+            on_select=lambda i, v: self.pipeline.edges(v)
         )
 
         self.draw_dropdown = DrawDropDown()
         self.draw_dropdown.draw_contours_dropdown.bind(
-            on_select=self.draw_contours
+            on_select=lambda i, v: self.draw_contours()
         )
         self.draw_dropdown.clear_contours_dropdown.bind(
-            on_select=self.clear_contours
+            on_select=lambda i, v: self.clear_contours()
         )
 
+    #---------------------------
+    # UI operations
+    #---------------------------
     def on_load_image_button_press(self):
         content = FileChooserContent(
             load=self.load_image_with_file_chooser,
@@ -61,29 +76,23 @@ class MPLWidget(Widget):
         )
         self.file_chooser.open()
 
-    def on_original_image_toggle_press(self):
-        if self.original_image_toggle.state == 'down':
-            self.app.config.set('General', 'show_pipeline', 'On')
-        else:
-            self.app.config.set('General', 'show_pipeline', 'Off')
-        self.app.config.write()
-
     def load_image_with_file_chooser(self, selection):
         if selection:  # Try loading file once confirmed with load button
             if self.file_chooser.content.load_button.state == 'down':
                 try:
-                    pipeline = Pipeline.from_file(selection[0])
+                    self.clear()
 
-                    if pipeline is None:
+                    self.pipeline.load_image(selection[0])
+
+                    if self.pipeline.empty:
                         raise exceptions.ImageLoadError()
 
-                    self.active_pipeline = pipeline
-
-                    self.pipelines.append(self.active_pipeline)
                     self.update_image()
 
                     # Sync at 30 FPS
-                    Clock.schedule_interval(self.sync_texture, 1 / 30)
+                    Clock.schedule_interval(
+                        lambda interval: self.update_image(), 1 / 30
+                    )
                 except Exception as e:
                     raise e
                 finally:  # Cleanup
@@ -92,71 +101,38 @@ class MPLWidget(Widget):
     def dismiss_file_chooser(self):
         self.file_chooser.dismiss()
 
-    def update_image(self):
-        show_pipeline = self.app.config.get('General', 'show_pipeline') == 'On'
-        image = (
-            self.active_pipeline.image
-            if show_pipeline else self.active_pipeline.original_with_contours
-        )
+    def on_original_image_toggle_press(self):
+        if self.original_image_toggle.state == 'down':
+            self.app.config.set('General', 'show_pipeline', 'On')
+        else:
+            self.app.config.set('General', 'show_pipeline', 'Off')
+        self.app.config.write()
 
-        match image.ndim:
-            case 2:  # Grayscale
-                colorfmt = 'luminance'
-            case 3:  # BGR
-                colorfmt = 'bgr'
-            case _:  # Should not happen
-                raise ValueError('Bad image shape')
-
-        buff = cv.flip(image, 0).tobytes()
-        texture = Texture.create(
-            size=(image.shape[1], image.shape[0]), colorfmt=colorfmt
-        )
-        texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
-
-        self.image.texture = texture
-        self.image.opacity = 1
-        self.center_image()
-
-    def sync_texture(self, interval):
-        if self.active_pipeline is not None:
-            self.update_image()
-
-    def clear_image_and_pipeline(self):
-        self.active_pipeline = None
-        self.image.texture = None
-        self.image.opacity = 0
-
-    def resize_image(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.resize(value)
-    ##############################
-    # Pipeline operations
-    ##############################
-    def gray_image(self, instance, value):
-        if self.active_pipeline is not None:
-            image = self.active_pipeline.image
-            if image.ndim == 3:
-                self.active_pipeline.gray()
-
-    def blur_image(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.blur(value)
-
-    def detect_edges(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.edges(value)
-
-    def draw_contours(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.draw_contours(value)
-
-    def clear_contours(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.clear_contours(value)
-
-    ##############################
+    #---------------------------
     # Image operations
-    ##############################
+    #---------------------------
+    def update_image(self):
+        if not self.pipeline.empty:
+            show_pipeline = self.app.config.get(
+                'General', 'show_pipeline'
+            ) == 'On'
+            image = (
+                self.pipeline.image
+                if show_pipeline else self.pipeline.original
+            )
+
+            colorfmt = 'luminance' if image.ndim == 2 else 'bgr'
+
+            buff = cv.flip(image, 0).tobytes()
+            texture = Texture.create(
+                size=(image.shape[1], image.shape[0]), colorfmt=colorfmt
+            )
+            texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
+
+            self.image.texture = texture
+            self.image.opacity = 1
+            self.center_image()
+
     def center_image(self):
         if self.image.texture:
             self.image.center_x = 0.5 * self.width
@@ -165,6 +141,45 @@ class MPLWidget(Widget):
     def zoom(self, factor):
         self.scatter.scale *= factor
         # self.center_image()
+
+    def draw_contours(self):
+        '''Draw OpenCV contours as widgets'''
+        if not self.pipeline.empty:
+            p = self.pipeline
+
+            if not p.edges_detected:
+                p.edges()
+            if not p.contours:
+                p.contour_tree()
+
+            # Map contours to widget coordinates
+            w, h = self.image.size
+
+            scale = (
+                w / self.pipeline.image.shape[1],
+                h / self.pipeline.image.shape[0],
+            )
+
+            if self.contours:
+                self.clear_contours()
+
+            for c in p.contours:
+                mapped = [
+                    (p[0][0] * scale[0], h - p[0][1] * scale[1]) for p in c
+                ]
+                contour = Contour(mapped)
+                self.image.add_widget(contour)
+                self.contours.append(contour)
+
+    def clear_contours(self):
+        for contour in self.contours:
+            self.image.remove_widget(contour)
+        self.contours = []
+
+    def clear(self):
+        self.pipeline.clear('all')
+        self.clear_contours()
+        self.image.texture = None
 
 
 class MPLApp(App):

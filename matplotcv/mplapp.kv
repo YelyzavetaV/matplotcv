@@ -52,7 +52,7 @@
 
             Button:
                 id: bin_button
-                on_release: root.clear_image_and_pipeline()
+                on_release: root.clear()
                 background_normal: 'images/bin_icon_normal.png'
                 background_down: 'images/bin_icon_down.png'
                 height: root.height
@@ -106,9 +106,9 @@
 
                 ToggleButton:
                     id: original_image_toggle
+                    on_press: root.on_original_image_toggle_press()
                     background_normal: 'images/toggle_off_icon.png'
                     background_down: 'images/toggle_on_icon.png'
-                    on_press: root.on_original_image_toggle_press()
                     state: 'down' if root.app.config.get('General', 'show_pipeline') == 'On' else 'normal'
                     height: 80
                     border: 0, 0, 0, 0

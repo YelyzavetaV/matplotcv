@@ -25,23 +25,25 @@ sizes = {
 
 
 class Pipeline:
-    image = None
+    '''Pipeline controls all OpenCV computations.'''
+    _image = None
+    _original = None
+    edges_detected = False
+    contours = []
 
-    def __init__(self, image: np.ndarray):
-        self._original = image
-        self.original_with_contours = image.copy()
-        self.image = image.copy()
+    @property
+    def empty(self):
+        return self.original is None and self.image is None
 
-        self.c = self.image.shape[2] if self.image.ndim == 3 else 1
-        self.edges_detected = False
+    @property
+    def image(self):
+        return self._image
 
-        self.k = 0  # no blur
+    @property
+    def original(self):
+        return self._original
 
-        self.contours = []
-        self.hierarchy = []
-
-    @classmethod
-    def from_file(cls, filename: str):
+    def load_image(self, filename: str):
         _, ext = os.path.splitext(filename)
         if ext.lower() not in supported_exts:
             raise ValueError(f'Unsupported file extension {ext}')
@@ -49,22 +51,26 @@ class Pipeline:
         image = cv.imread(filename)
 
         if image is not None:
-            return cls(image)
+            self._original = image
+            self._image = image.copy()
 
-    @property
-    def original(self):
-        return self._original
+    def clear(self, which: str = 'all'):
+        if not self.empty:
+            match which:
+                case 'all':
+                    self._image = self._original = None
+                case 'processed':
+                    self._image = self._original.copy()
+                case _:
+                    raise ValueError('Bad clear option')
 
-    def clear(self):
-        self.image = self.original.copy()
-        self.original_with_contours = self.original.copy()
-        self.edges_detected = False
-        self.k = 0
-        self.contours = []
-        self.hierarchy = []
+            self.edges_detected = False
+            self.k = 0
+            self.contours = []
+            self.hierarchy = []
 
     def resize(self, size: str):
-        self.clear()
+        self.clear('processed')
 
         h, w = self.image.shape[0], self.image.shape[1]
         aspect_ratio = w / h
@@ -83,66 +89,37 @@ class Pipeline:
             warnings.warn('Cannot increase the size of the image')
             return
 
-        self.image = cv.resize(self.image, (target_width, target_height))
-        self._original = self.image.copy()
-        self.original_with_contours = self.image.copy()
+        self._original = cv.resize(self.image, (target_width, target_height))
+        self._image = self._original.copy()
 
     def gray(self):
-        self.image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
+        if self.image.ndim == 3:
+            self._image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
 
     def blur(self, kind: str = 'gaussian', n: int = 1):
         match kind:
             case 'gaussian':
                 k = 3 + 2 * n
-                self.image = cv.GaussianBlur(self.image, (k, k), 0)
+                self._image = cv.GaussianBlur(self._image, (k, k), 0)
             case _:
                 raise ValueError('Bad blur function')
-
-        self.k += k
 
     def edges(self, kind: str = 'canny'):
         match kind:
             case 'canny':
                 # Automatic thresholding based on median
                 sigma = 0.33
-                m = np.median(self.image)
+                m = np.median(self._image)
                 lower = int(max(0, (1.0 - sigma) * m))
                 upper = int(min(255, (1.0 + sigma) * m))
 
-                self.image = cv.Canny(self.image, lower, upper)
+                self._image = cv.Canny(self._image, lower, upper)
             case _:
                 raise ValueError('Bad edge detection function')
 
         self.edges_detected = True
 
     def contour_tree(self):
-        self.contours, self.hierarchy = cv.findContours(
-            self.image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+        self.contours, _ = cv.findContours(
+            self._image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
         )
-
-    def draw_contours(self, which: str = 'all'):
-        if not self.edges_detected:
-            self.edges()
-
-        if not self.contours:
-            self.contour_tree()
-
-        match which:
-            case 'all':
-                idx = -1
-            case _:
-                raise ValueError('Bad contour index')
-
-        cv.drawContours(
-            self.original_with_contours, self.contours, idx, (0, 255, 0), 3
-        )
-
-    def clear_contours(self, which: str = 'all'):
-        self.original_with_contours = self.original.copy()
-
-        match which:
-            case 'all':
-                self.contours = []
-                self.hierarchy = []
-            case _:  # TODO: Redraw contours
-                raise ValueError('Bad contour index')
