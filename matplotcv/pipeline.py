@@ -32,7 +32,6 @@ class Pipeline:
         self.original_with_contours = image.copy()
         self.image = image.copy()
 
-        self.h, self.w = self.image.shape[0], self.image.shape[1]
         self.c = self.image.shape[2] if self.image.ndim == 3 else 1
         self.edges_detected = False
 
@@ -56,25 +55,37 @@ class Pipeline:
     def original(self):
         return self._original
 
+    def clear(self):
+        self.image = self.original.copy()
+        self.original_with_contours = self.original.copy()
+        self.edges_detected = False
+        self.k = 0
+        self.contours = []
+        self.hierarchy = []
+
     def resize(self, size: str):
-        aspect_ratio = self.w / self.h
+        self.clear()
+
+        h, w = self.image.shape[0], self.image.shape[1]
+        aspect_ratio = w / h
 
         try:
             target_width, target_height = sizes[size]
         except KeyError as e:
             raise ValueError(f'Size "{size}" not supported') from e
 
-        if self.w >= self.h:
+        if w >= h:
             target_height = int(target_width / aspect_ratio)
         else:
             target_width = int(target_height * aspect_ratio)
 
-        if target_width > self.w:
+        if target_width > w:
             warnings.warn('Cannot increase the size of the image')
             return
 
         self.image = cv.resize(self.image, (target_width, target_height))
-        self.h, self.w = self.image.shape[0], self.image.shape[1]
+        self._original = self.image.copy()
+        self.original_with_contours = self.image.copy()
 
     def gray(self):
         self.image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)

@@ -32,7 +32,7 @@ class MPLWidget(Widget):
         super().__init__(**kwargs)
 
         self.reduce_dropdown = ResizeDropDown()
-        self.reduce_dropdown.bind(on_select=self.reduce_image)
+        self.reduce_dropdown.bind(on_select=self.resize_image)
 
         self.tools_dropdown = ToolsDropDown()
         self.tools_dropdown.bind(on_select=self.gray_image)
@@ -126,13 +126,12 @@ class MPLWidget(Widget):
         self.image.texture = None
         self.image.opacity = 0
 
+    def resize_image(self, instance, value):
+        if self.active_pipeline is not None:
+            self.active_pipeline.resize(value)
     ##############################
     # Pipeline operations
     ##############################
-    def reduce_image(self, instance, value):
-        if self.active_pipeline is not None:
-            self.active_pipeline.resize(value)
-
     def gray_image(self, instance, value):
         if self.active_pipeline is not None:
             image = self.active_pipeline.image
