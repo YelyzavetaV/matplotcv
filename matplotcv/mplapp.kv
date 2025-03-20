@@ -21,13 +21,17 @@
         Scatter:
             id: scatter
             size_hint: None, None
-            size: root.size
+            size: root.width, root.height - 150
             do_rotation: False
+            do_translation: True
+            do_scale: True
 
             Image:
                 id: image
                 size_hint: None, None
-                size: root.size
+                size: self.parent.size
+                allow_stretch: True
+                keep_ratio: True
 
         BoxLayout:
             padding: 10

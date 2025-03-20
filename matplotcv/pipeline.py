@@ -43,6 +43,11 @@ class Pipeline:
     def original(self):
         return self._original
 
+    @property
+    def aspect(self):
+        if not self.empty:
+            return self.original.shape[1] / self.original.shape[0]
+
     def load_image(self, filename: str):
         _, ext = os.path.splitext(filename)
         if ext.lower() not in supported_exts:

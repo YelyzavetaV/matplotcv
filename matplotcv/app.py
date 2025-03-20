@@ -33,11 +33,7 @@ class MPLWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        Window.bind(
-            on_resize=(
-                lambda i, w, h: self.draw_contours() if self.contours else None
-            )
-        )
+        Window.bind(on_resize=self.on_window_resize)
 
         self.reduce_dropdown = ResizeDropDown()
         self.reduce_dropdown.bind(
@@ -64,6 +60,11 @@ class MPLWidget(Widget):
     #---------------------------
     # UI operations
     #---------------------------
+    def on_window_resize(self, instance, w, h):
+        if self.contours:
+            Clock.unschedule(self.draw_contours)  # Prevent multiple calls
+            Clock.schedule_once(lambda dt: self.draw_contours(), 0.1)
+
     def on_load_image_button_press(self):
         content = FileChooserContent(
             load=self.load_image_with_file_chooser,
@@ -111,6 +112,15 @@ class MPLWidget(Widget):
     #---------------------------
     # Image operations
     #---------------------------
+    def resize_image(self):
+        w, h = self.size
+        aspect = self.pipeline.aspect
+
+        if w / h > aspect:
+            self.image.size = (h * aspect, h)
+        else:
+            self.image.size = (w, w / aspect)
+
     def update_image(self):
         if not self.pipeline.empty:
             show_pipeline = self.app.config.get(
@@ -130,7 +140,7 @@ class MPLWidget(Widget):
             texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
             self.image.texture = texture
-            self.image.size = (image.shape[1], image.shape[0])
+            self.resize_image()
             self.center_image()
 
     def center_image(self):
@@ -155,10 +165,11 @@ class MPLWidget(Widget):
 
             # Map contours to widget coordinates
             w, h = self.image.size
+            x, y = self.image.pos
 
             scale = (
-                w / self.pipeline.image.shape[1],
-                h / self.pipeline.image.shape[0],
+                w / self.pipeline.original.shape[1],
+                h / self.pipeline.original.shape[0],
             )
 
             if self.contours:
@@ -166,7 +177,9 @@ class MPLWidget(Widget):
 
             for c in p.contours:
                 mapped = [
-                    (p[0][0] * scale[0], h - p[0][1] * scale[1]) for p in c
+                    (
+                        x + p[0][0] * scale[0], y + h - p[0][1] * scale[1]
+                    ) for p in c
                 ]
                 contour = Contour(mapped)
                 self.image.add_widget(contour)
