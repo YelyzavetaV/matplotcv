@@ -5,6 +5,12 @@ from kivy.uix.dropdown import DropDown
 from kivy.properties import ObjectProperty
 
 
+def print_widget_hierarchy(widget, level=0):
+    print("  " * level + f"{widget.__class__.__name__}: {widget}")
+    for child in widget.children:
+        print_widget_hierarchy(child, level + 1)
+
+
 class Background(Image):
     pass
 

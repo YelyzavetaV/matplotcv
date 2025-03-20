@@ -33,7 +33,9 @@ class MPLWidget(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        Window.bind(on_resize=self.on_window_resize)
+        Window.bind(
+            on_resize=self.on_window_resize, mouse_pos=self.on_mouse_move
+        )
 
         self.reduce_dropdown = ResizeDropDown()
         self.reduce_dropdown.bind(
@@ -50,12 +52,8 @@ class MPLWidget(Widget):
         )
 
         self.draw_dropdown = DrawDropDown()
-        self.draw_dropdown.bind(
-            on_select=lambda i, v: self.draw_contours()
-        )
-        self.draw_dropdown.bind(
-            on_select=lambda i, v: self.clear_contours()
-        )
+        self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours())
+        self.draw_dropdown.bind(on_select=lambda i, v: self.clear_contours())
 
     #---------------------------
     # UI operations
@@ -64,6 +62,16 @@ class MPLWidget(Widget):
         if self.contours:
             Clock.unschedule(self.draw_contours)  # Prevent multiple calls
             Clock.schedule_once(lambda dt: self.draw_contours(), 0.1)
+
+    def on_mouse_move(self, window, pos):
+        threshold = self.app.config.get(
+            'Advanced', 'contour_collide_threshold'
+        )
+        threshold = float(threshold)
+
+        pos = self.image.to_widget(*pos)
+        for contour in self.contours:
+            contour.hovered = contour.collide_point(*pos, threshold)
 
     def on_load_image_button_press(self):
         content = FileChooserContent(
@@ -177,9 +185,8 @@ class MPLWidget(Widget):
 
             for c in p.contours:
                 mapped = [
-                    (
-                        x + p[0][0] * scale[0], y + h - p[0][1] * scale[1]
-                    ) for p in c
+                    (x + p[0][0] * scale[0], y + h - p[0][1] * scale[1])
+                    for p in c
                 ]
                 contour = Contour(mapped)
                 self.image.add_widget(contour)
@@ -214,6 +221,9 @@ class MPLApp(App):
         config.setdefault('Graphics', 'min_width', 800)
         config.setdefault('Graphics', 'min_height', 600)
 
+        config.adddefaultsection('Advanced')
+        config.setdefault('Advanced', 'contour_collide_threshold', 10)
+
     def build_settings(self, settings):
         settings.add_json_panel(
             'General',
@@ -239,6 +249,16 @@ class MPLApp(App):
             data='''
             [
                 {'type': 'title', 'title': 'Graphics'},
+            ]
+            '''
+        )
+
+        settings.add_json_panel(
+            'Advanced',
+            self.config,
+            data='''
+            [
+                {'type': 'title', 'title': 'Advanced'},
             ]
             '''
         )
