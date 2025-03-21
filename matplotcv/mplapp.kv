@@ -10,15 +10,14 @@
     FloatLayout:
         id: layout
         size: root.size
-        # padding: (10, 10, 10, 50)
 
-        Background:
+        Image:
             id: background
             size_hint: 1, 1
             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             color: 1, 1, 1, 1
 
-        Scatter:
+        TransparentScatter:
             id: scatter
             size_hint: None, None
             size: root.width, root.height - 150
@@ -114,7 +113,7 @@
                     border: 0, 0, 0, 0
 
                 Label:
-                    text: 'Show\nPipeline'
+                    text: 'Show\npipeline'
                     size_hint_y: None
                     height: 40
                     halign: 'center'
@@ -145,10 +144,10 @@
                 width: 100
                 border: 0, 0, 0, 0
 
-<FileChooserContent>:
+# Custom popups and dropdowns of MPLWidget
+<FileChooserContent@PopUp>:
     file_chooser: file_chooser
     load_button: load_button
-    cancel_button: cancel_button
 
     BoxLayout:
         orientation: 'vertical'
@@ -169,12 +168,12 @@
                 id: load_button
                 text: 'Load'
                 on_press: root.load(file_chooser.selection)
+
             Button:
-                id: cancel_button
                 text: 'Cancel'
                 on_press: root.cancel()
 
-<ResizeDropDown>:
+<ResizeDropDown@DropDown>:
     auto_width: False
     width: 200
 
@@ -196,12 +195,12 @@
         valign: 'middle'
         on_release: root.select('hd')
 
-<ToolsDropDown>:
+<ToolsDropDown@DropDown>:
     auto_width: False
     width: 275
 
     Button:
-        text: 'Gray Scale'
+        text: 'Gray scale'
         height: 50
         size_hint_y: None
         text_size: self.size
@@ -221,7 +220,7 @@
         on_release: root.open_nested_dropdown(root.blur_dropdown, self)
 
     Button:
-        text: 'Detect Edges...'
+        text: 'Detect edges...'
         height: 50
         size_hint_y: None
         text_size: self.size
@@ -230,7 +229,7 @@
         padding: (5, 0)
         on_release: root.open_nested_dropdown(root.detect_edges_dropdown, self)
 
-<BlurDropDown>:
+<BlurDropDown@DropDown>:
     auto_width: False
     width: 200
 
@@ -244,7 +243,7 @@
         padding: (5, 0)
         on_release: root.select('gaussian')
 
-<DetectEdgesDropDown>:
+<DetectEdgesDropDown@DropDown>:
     auto_width: False
     width: 200
 
@@ -258,12 +257,12 @@
         padding: (5, 0)
         on_release: root.select('canny')
 
-<DrawDropDown>:
+<DrawDropDown@DropDown>:
     auto_width: False
-    width: 225
+    width: 210
 
     Button:
-        text: 'Draw Contours'
+        text: 'Draw contours'
         height: 50
         size_hint_y: None
         text_size: self.size
@@ -273,7 +272,7 @@
         on_release: root.select('draw')
 
     Button:
-        text: 'Clear Contours'
+        text: 'Clear contours'
         height: 50
         size_hint_y: None
         text_size: self.size

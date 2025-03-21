@@ -98,8 +98,9 @@ class Pipeline:
         self._image = self._original.copy()
 
     def gray(self):
-        if self.image.ndim == 3:
-            self._image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
+        if not self.empty:
+            if self.image.ndim == 3:
+                self._image = cv.cvtColor(self.image, cv.COLOR_BGR2GRAY)
 
     def blur(self, kind: str = 'gaussian', n: int = 1):
         match kind:

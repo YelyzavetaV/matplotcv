@@ -1,5 +1,6 @@
 import os.path
-from kivy.uix.image import Image
+from kivy.factory import Factory
+from kivy.uix.scatter import Scatter
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.properties import ObjectProperty
@@ -11,8 +12,12 @@ def print_widget_hierarchy(widget, level=0):
         print_widget_hierarchy(child, level + 1)
 
 
-class Background(Image):
-    pass
+class TransparentScatter(Scatter):
+    def on_touch_down(self, touch):
+        # Prevent Scatter from bringing itself to the front
+        if self.collide_point(*touch.pos):
+            return super(Scatter, self).on_touch_down(touch)
+        return False
 
 
 class FileChooserContent(BoxLayout):
@@ -31,10 +36,6 @@ def open_nested_dropdown(dropdown, button):
     dropdown.pos = (pos[0] + button.width, pos[1])
 
 
-class ResizeDropDown(DropDown):
-    pass
-
-
 class ToolsDropDown(DropDown):
     blur_dropdown = ObjectProperty()
     detect_edges_dropdown = ObjectProperty()
@@ -42,17 +43,5 @@ class ToolsDropDown(DropDown):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.blur_dropdown = BlurDropDown()
-        self.detect_edges_dropdown = DetectEdgesDropDown()
-
-
-class BlurDropDown(DropDown):
-    pass
-
-
-class DetectEdgesDropDown(DropDown):
-    pass
-
-
-class DrawDropDown(DropDown):
-    pass
+        self.blur_dropdown = Factory.BlurDropDown()
+        self.detect_edges_dropdown = Factory.DetectEdgesDropDown()

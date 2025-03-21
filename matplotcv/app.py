@@ -3,6 +3,7 @@ import cv2 as cv
 import kivy
 from kivy.core.window import Window
 from kivy.app import App
+from kivy.factory import Factory
 from kivy.uix.widget import Widget
 from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
@@ -11,10 +12,8 @@ from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
 
 import exceptions
+from components import FileChooserContent, ToolsDropDown
 from pipeline import Pipeline
-from components import (
-    FileChooserContent, ResizeDropDown, ToolsDropDown, DrawDropDown
-)
 from contour import Contour
 
 kivy.require('2.3.0')
@@ -37,7 +36,7 @@ class MPLWidget(Widget):
             on_resize=self.on_window_resize, mouse_pos=self.on_mouse_move
         )
 
-        self.reduce_dropdown = ResizeDropDown()
+        self.reduce_dropdown = Factory.ResizeDropDown()
         self.reduce_dropdown.bind(
             on_select=lambda i, v: self.pipeline.resize(v)
         )
@@ -51,7 +50,7 @@ class MPLWidget(Widget):
             on_select=lambda i, v: self.pipeline.edges(v)
         )
 
-        self.draw_dropdown = DrawDropDown()
+        self.draw_dropdown = Factory.DrawDropDown()
         self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours())
         self.draw_dropdown.bind(on_select=lambda i, v: self.clear_contours())
 
@@ -104,7 +103,7 @@ class MPLWidget(Widget):
                     )
                 except Exception as e:
                     raise e
-                finally:  # Cleanup
+                finally:
                     self.dismiss_file_chooser()
 
     def dismiss_file_chooser(self):

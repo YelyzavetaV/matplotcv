@@ -1,13 +1,40 @@
 import math
+import numpy as np
+import cv2 as cv
+
+from kivy.lang import Builder
+from kivy.factory import Factory
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Line
-from kivy.properties import ObjectProperty
+
+Builder.load_file('contour.kv')
+
+
+def _point_segment_distance(
+    point: tuple[float], segment: tuple[tuple[float]]
+) -> float:
+    '''Calculate the distance between a point and a line segment.'''
+    x, y = point
+    sx, sy = segment[0]
+    ex, ey = segment[1]
+
+    length = (ex - sx)**2 + (ey - sy)**2
+    if length == 0:  # Segment's start and end points are the same
+        return math.sqrt((x - sx)**2 + (y - sy)**2)
+
+    # Calculate the projection of the point onto the line
+    tau = max(
+        0, min(1, ((x - sx) * (ex - sx) + (y - sy) * (ey - sy)) / length)
+    )
+    proj = (
+        sx + tau * (ex - sx), sy + tau * (ey - sy)
+    )
+
+    return math.sqrt((x - proj[0])**2 + (y - proj[1])**2)
 
 
 class Contour(Widget):
-    pos = ObjectProperty((0, 0))
-    size = ObjectProperty((0, 0))
-
+    '''Handles interactable contours.'''
     def __init__(self, points, **kwargs):
         super().__init__(**kwargs)
 
@@ -15,6 +42,8 @@ class Contour(Widget):
         self._hovered = False
 
         self.update(points)
+
+        self.dropdown = Factory.ContourDropDown()
 
     @property
     def hovered(self):
@@ -24,7 +53,6 @@ class Contour(Widget):
     def hovered(self, value):
         if self.hovered != value:
             self._hovered = value
-            print(f"Hover state changed to: {value}")
             self.update(self.points)
 
     def update(self, points):
@@ -46,29 +74,39 @@ class Contour(Widget):
         of the contour.
         '''
         for i in range(len(self.points) - 1):
-            p1 = self.points[i]
-            p2 = self.points[i + 1]
-
-            if self.point_to_segment_distance((x, y), p1, p2) < threshold:
+            if _point_segment_distance(
+                (x, y), (self.points[i], self.points[i + 1])
+            ) < threshold:
                 return True
         return False
 
-    @staticmethod
-    def point_to_segment_distance(point, start, end):
-        x, y = point
-        sx, sy = start
-        ex, ey = end
+    def on_touch_down(self, touch):
+        if touch.button == 'left' and self.collide_point(*touch.pos):
+            print('Opening dropdown')
+            self.dropdown.open(self)
+            self.dropdown.pos = touch.pos
+            return True
+        return super().on_touch_down(touch)
 
-        length = (ex - sx)**2 + (ey - sy)**2
-        if length == 0:  # Segment's start and end points are the same
-            return math.sqrt((x - sx)**2 + (y - sy)**2)
+def corner_split(
+    contour: Contour, epsilon=5.0, closed=True
+) -> tuple[Contour]:
+    points = contour.points
 
-        # Calculate the projection of the point onto the line
-        tau = max(
-            0, min(1, ((x - sx) * (ex - sx) + (y - sy) * (ey - sy)) / length)
-        )
-        proj = (
-            sx + tau * (ex - sx), sy + tau * (ey - sy)
-        )
+    reduced = cv.approxPolyDP(
+        np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
+        epsilon,
+        closed,
+    )
 
-        return math.sqrt((x - proj[0])**2 + (y - proj[1])**2)
+    # Extract corners
+    corners = [tuple(p[0]) for p in reduced]
+
+    contours, current = [], []
+    for p in points:
+        current.append(p)
+        if p in corners:
+            contours.append(current)
+            current = [p]
+
+    return (Contour(c) for c in contours)
