@@ -1,5 +1,6 @@
 #:kivy 2.0.0
 #:import kivy kivy
+#:import webbrowser webbrowser
 
 <MPLWidget>:
     layout: layout
@@ -31,6 +32,30 @@
                 size: self.parent.size
                 allow_stretch: True
                 keep_ratio: True
+
+        BoxLayout:
+            spacing: 30
+            pos_hint: {'right': 0.98, 'y': 0}
+            size_hint: None, None
+            height: 120
+            width: 120
+
+            Button:
+                on_release: webbrowser.open('https://github.com/YelyzavetaV/matplotcv.git')
+                background_normal: 'images/github_icon_normal.png'
+                background_down: 'images/github_icon_down.png'
+                height: root.height
+                width: 100
+                border: 0, 0, 0, 0
+
+            # Image:
+            #     id: logo
+            #     size_hint: None, None
+            #     source: 'images/matplotcv_icon.png'
+            #     height: 120
+            #     width: 100
+            #     allow_stretch: True
+            #     keep_ratio: True
 
         BoxLayout:
             padding: 10
