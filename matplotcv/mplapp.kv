@@ -38,7 +38,7 @@
             pos_hint: {'top': 1}
             size_hint: None, None
             height: 120
-            width: 800
+            width: 900
 
             Button:
                 id: load_image_button
@@ -70,9 +70,18 @@
 
             Button:
                 id: draw_button
-                on_release: root.draw_dropdown.open(self)
+                on_release: root.draw_contours()
                 background_normal: 'images/draw_icon_normal.png'
                 background_down: 'images/draw_icon_down.png'
+                height: root.height
+                width: 100
+                border: 0, 0, 0, 0
+
+            Button:
+                id: erase_button
+                # on_release: root.draw_dropdown.open(self)
+                background_normal: 'images/erase_icon_normal.png'
+                background_down: 'images/erase_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
@@ -256,27 +265,3 @@
         valign: 'middle'
         padding: (5, 0)
         on_release: root.select('canny')
-
-<DrawDropDown@DropDown>:
-    auto_width: False
-    width: 210
-
-    Button:
-        text: 'Draw contours'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.select('draw')
-
-    Button:
-        text: 'Clear contours'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.select('clear')

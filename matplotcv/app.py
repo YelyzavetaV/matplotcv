@@ -50,9 +50,9 @@ class MPLWidget(Widget):
             on_select=lambda i, v: self.pipeline.edges(v)
         )
 
-        self.draw_dropdown = Factory.DrawDropDown()
-        self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours())
-        self.draw_dropdown.bind(on_select=lambda i, v: self.clear_contours())
+        # self.draw_dropdown = Factory.DrawDropDown()
+        # self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours())
+        # self.draw_dropdown.bind(on_select=lambda i, v: self.clear_contours())
 
     #---------------------------
     # UI operations
