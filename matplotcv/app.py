@@ -174,6 +174,21 @@ class MPLWidget(Widget):
     #---------------------------
     # Contour operations
     #---------------------------
+    def map_contour(self, contour):
+        '''Map OpenCV contour to widget coordinates.'''
+        w, h = self.image.size
+        x, y = self.image.pos
+
+        scale = (
+            w / self.pipeline.original.shape[1],
+            h / self.pipeline.original.shape[0],
+        )
+
+        return [
+            (x + p[0][0] * scale[0], y + h - p[0][1] * scale[1])
+            for p in contour
+        ]
+
     def draw_contours(self, which: str = 'all'):
         '''Draw OpenCV contours as widgets'''
         if not self.pipeline.empty:
@@ -188,24 +203,11 @@ class MPLWidget(Widget):
             if not p.contours:
                 p.contour_tree(which)
 
-            # Map contours to widget coordinates
-            w, h = self.image.size
-            x, y = self.image.pos
-
-            scale = (
-                w / self.pipeline.original.shape[1],
-                h / self.pipeline.original.shape[0],
-            )
-
             if self.contours:
                 self.clear_contour()
 
             for c in p.contours:
-                mapped = [
-                    (x + p[0][0] * scale[0], y + h - p[0][1] * scale[1])
-                    for p in c
-                ]
-                contour = Contour(mapped)
+                contour = Contour(self.map_contour(c))
                 if contour not in self.contours:
                     self.image.add_widget(contour)
                     self.contours.append(contour)
@@ -215,6 +217,7 @@ class MPLWidget(Widget):
             self.clear_contour(old)
 
             for contour in new:
+                contour = Contour(self.map_contour(contour))
                 self.image.add_widget(contour)
                 self.contours.append(contour)
 

@@ -86,7 +86,7 @@ class Contour(Widget):
             return True
         return super().on_touch_down(touch)
 
-    def subcontours(self, epsilon=5.0, closed=True):
+    def subcontours(self, epsilon=5.0, closed=False):
         '''
         Split contour at corners to obtain subcontours.
         '''
@@ -108,4 +108,4 @@ class Contour(Widget):
                 contours.append(current)
                 current = [p]
 
-        return [Contour(c) for c in contours]
+        return contours
