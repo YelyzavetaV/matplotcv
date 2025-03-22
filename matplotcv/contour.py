@@ -26,9 +26,7 @@ def _point_segment_distance(
     tau = max(
         0, min(1, ((x - sx) * (ex - sx) + (y - sy) * (ey - sy)) / length)
     )
-    proj = (
-        sx + tau * (ex - sx), sy + tau * (ey - sy)
-    )
+    proj = (sx + tau * (ex - sx), sy + tau * (ey - sy))
 
     return math.sqrt((x - proj[0])**2 + (y - proj[1])**2)
 
@@ -44,6 +42,7 @@ class Contour(Widget):
         self.update(points)
 
         self.dropdown = Factory.ContourDropDown()
+        self.dropdown.contour = self
 
     @property
     def hovered(self):
@@ -82,31 +81,31 @@ class Contour(Widget):
 
     def on_touch_down(self, touch):
         if touch.button == 'left' and self.collide_point(*touch.pos):
-            print('Opening dropdown')
             self.dropdown.open(self)
             self.dropdown.pos = touch.pos
             return True
         return super().on_touch_down(touch)
 
-def corner_split(
-    contour: Contour, epsilon=5.0, closed=True
-) -> tuple[Contour]:
-    points = contour.points
+    def subcontours(self, epsilon=5.0, closed=True):
+        '''
+        Split contour at corners to obtain subcontours.
+        '''
+        points = self.points
 
-    reduced = cv.approxPolyDP(
-        np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
-        epsilon,
-        closed,
-    )
+        reduced = cv.approxPolyDP(
+            np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
+            epsilon,
+            closed,
+        )
 
-    # Extract corners
-    corners = [tuple(p[0]) for p in reduced]
+        # Extract corners
+        corners = [tuple(p[0]) for p in reduced]
 
-    contours, current = [], []
-    for p in points:
-        current.append(p)
-        if p in corners:
-            contours.append(current)
-            current = [p]
+        contours, current = [], []
+        for p in points:
+            current.append(p)
+            if p in corners:
+                contours.append(current)
+                current = [p]
 
-    return (Contour(c) for c in contours)
+        return [Contour(c) for c in contours]

@@ -50,10 +50,6 @@ class MPLWidget(Widget):
             on_select=lambda i, v: self.pipeline.edges(v)
         )
 
-        # self.draw_dropdown = Factory.DrawDropDown()
-        # self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours())
-        # self.draw_dropdown.bind(on_select=lambda i, v: self.clear_contours())
-
     #---------------------------
     # UI operations
     #---------------------------
@@ -147,8 +143,10 @@ class MPLWidget(Widget):
             texture.blit_buffer(buff, colorfmt=colorfmt, bufferfmt='ubyte')
 
             self.image.texture = texture
+
             self.resize_image()
             self.center_image()
+            self.image.canvas.ask_update()
 
     def center_image(self):
         if self.image.texture:
@@ -160,6 +158,14 @@ class MPLWidget(Widget):
     def zoom(self, factor):
         self.scatter.scale *= factor
 
+    def clear(self):
+        self.pipeline.clear('all')
+        self.clear_contour()
+        self.image.texture = None
+
+    #---------------------------
+    # Contour operations
+    #---------------------------
     def draw_contours(self):
         '''Draw OpenCV contours as widgets'''
         if not self.pipeline.empty:
@@ -180,7 +186,7 @@ class MPLWidget(Widget):
             )
 
             if self.contours:
-                self.clear_contours()
+                self.clear_contour()
 
             for c in p.contours:
                 mapped = [
@@ -188,18 +194,23 @@ class MPLWidget(Widget):
                     for p in c
                 ]
                 contour = Contour(mapped)
+                if contour not in self.contours:
+                    self.image.add_widget(contour)
+                    self.contours.append(contour)
+
+    def replace_contour(self, old, new):
+        if old in self.contours:
+            self.clear_contour(old)
+
+            for contour in new:
                 self.image.add_widget(contour)
                 self.contours.append(contour)
 
-    def clear_contours(self):
-        for contour in self.contours:
+    def clear_contour(self, contour: Contour | None = None):
+        contours = self.contours[:] if contour is None else [contour]
+        for contour in contours:
             self.image.remove_widget(contour)
-        self.contours = []
-
-    def clear(self):
-        self.pipeline.clear('all')
-        self.clear_contours()
-        self.image.texture = None
+            self.contours.remove(contour)
 
 
 class MPLApp(App):

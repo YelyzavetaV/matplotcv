@@ -13,6 +13,7 @@ def print_widget_hierarchy(widget, level=0):
 
 
 class TransparentScatter(Scatter):
+
     def on_touch_down(self, touch):
         # Prevent Scatter from bringing itself to the front
         if self.collide_point(*touch.pos):
