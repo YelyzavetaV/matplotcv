@@ -28,6 +28,7 @@ class MPLWidget(Widget):
     original_image_toggle = ObjectProperty()
     pipeline = Pipeline()
     contours = []
+    which_contours = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -50,13 +51,20 @@ class MPLWidget(Widget):
             on_select=lambda i, v: self.pipeline.edges(v)
         )
 
+        self.draw_dropdown = Factory.DrawDropDown()
+        self.draw_dropdown.bind(
+            on_select=lambda i, v: self.draw_contours(v)
+        )
+
     #---------------------------
     # UI operations
     #---------------------------
     def on_window_resize(self, instance, w, h):
         if self.contours:
             Clock.unschedule(self.draw_contours)  # Prevent multiple calls
-            Clock.schedule_once(lambda dt: self.draw_contours(), 0.1)
+            Clock.schedule_once(
+                lambda dt: self.draw_contours(self.which_contours), 0.1
+            )
 
     def on_mouse_move(self, window, pos):
         threshold = self.app.config.get(
@@ -166,15 +174,19 @@ class MPLWidget(Widget):
     #---------------------------
     # Contour operations
     #---------------------------
-    def draw_contours(self):
+    def draw_contours(self, which: str = 'all'):
         '''Draw OpenCV contours as widgets'''
         if not self.pipeline.empty:
             p = self.pipeline
 
+            if self.which_contours != which:
+                self.which_contours = which
+                self.pipeline.clear('processed')
+
             if not p.edges_detected:
                 p.edges()
             if not p.contours:
-                p.contour_tree()
+                p.contour_tree(which)
 
             # Map contours to widget coordinates
             w, h = self.image.size

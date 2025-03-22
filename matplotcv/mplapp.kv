@@ -95,7 +95,7 @@
 
             Button:
                 id: draw_button
-                on_release: root.draw_contours()
+                on_release: root.draw_dropdown.open(self)
                 background_normal: 'images/draw_icon_normal.png'
                 background_down: 'images/draw_icon_down.png'
                 height: root.height
@@ -290,3 +290,27 @@
         valign: 'middle'
         padding: (5, 0)
         on_release: root.select('canny')
+
+<DrawDropDown@DropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'Draw all'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('all')
+
+    Button:
+        text: 'Draw outer'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('external')

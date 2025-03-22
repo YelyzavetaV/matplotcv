@@ -70,9 +70,7 @@ class Pipeline:
                     raise ValueError('Bad clear option')
 
             self.edges_detected = False
-            self.k = 0
             self.contours = []
-            self.hierarchy = []
 
     def resize(self, size: str):
         self.clear('processed')
@@ -125,7 +123,15 @@ class Pipeline:
 
         self.edges_detected = True
 
-    def contour_tree(self):
+    def contour_tree(self, which: str = 'all'):
+        match which:
+            case 'all':
+                mode = cv.RETR_TREE
+            case 'external':
+                mode = cv.RETR_EXTERNAL
+            case _:
+                raise ValueError('Bad contour mode')
+
         self.contours, _ = cv.findContours(
-            self._image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+            self._image, mode, cv.CHAIN_APPROX_SIMPLE
         )
