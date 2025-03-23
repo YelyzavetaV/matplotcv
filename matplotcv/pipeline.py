@@ -29,7 +29,7 @@ class Pipeline:
     _image = None
     _original = None
     edges_detected = False
-    contours = []
+    contours = {}
 
     @property
     def empty(self):
@@ -70,7 +70,7 @@ class Pipeline:
                     raise ValueError('Bad clear option')
 
             self.edges_detected = False
-            self.contours = []
+            self.contours = {}
 
     def resize(self, size: str):
         self.clear('processed')
@@ -132,6 +132,41 @@ class Pipeline:
             case _:
                 raise ValueError('Bad contour mode')
 
-        self.contours, _ = cv.findContours(
+        contours, _ = cv.findContours(
             self._image, mode, cv.CHAIN_APPROX_SIMPLE
         )
+        self.contours = {i: c for i, c in enumerate(contours)}
+
+    def subcontours(
+        self, key: int, epsilon: float = 5.0, closed: bool = False
+    ) -> list[int]:
+        '''
+        Split contour at corners to obtain subcontours.
+        '''
+        if key not in self.contours:
+            raise ValueError(f'Contour {key} not found')
+
+        points = self.contours[key]
+
+        reduced = cv.approxPolyDP(
+            np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
+            epsilon,
+            closed,
+        )
+
+        # Extract corners
+        corners = [tuple(p[0]) for p in reduced]
+
+        contours, current = [], []
+        for p in points:
+            current.append(p)
+            if p in corners:
+                contours.append(
+                    np.array(current, dtype=np.int32).reshape(-1, 1, 2)
+                )
+                current = [p]
+
+        # Create unique keys for new contours
+        keys = [max(self.contours) + i + 1 for i in range(len(contours))]
+        self.contours.update({k: c for k, c in zip(keys, contours)})
+        return keys

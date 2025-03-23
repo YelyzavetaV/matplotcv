@@ -33,7 +33,7 @@ def _point_segment_distance(
 
 class Contour(Widget):
     '''Handles interactable contours.'''
-    def __init__(self, points, **kwargs):
+    def __init__(self, key, points, **kwargs):
         super().__init__(**kwargs)
 
         self.selected = False
@@ -42,7 +42,7 @@ class Contour(Widget):
         self.update(points)
 
         self.dropdown = Factory.ContourDropDown()
-        self.dropdown.contour = self
+        self.dropdown.contour_key = key
 
     @property
     def hovered(self):

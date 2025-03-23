@@ -7,12 +7,12 @@
         height: 50
         size_hint_y: None
         on_press:
-            app.root.replace_contour(root.contour, root.contour.subcontours())
+            app.root.replace_contour(root.contour_key, root.contour.subcontours())
         on_release: root.dismiss()
 
     Button:
         text: 'Clear'
         height: 50
         size_hint_y: None
-        on_press: app.root.clear_contour(root.contour)
+        on_press: app.root.clear_contour(root.contour_key)
         on_release: root.dismiss()

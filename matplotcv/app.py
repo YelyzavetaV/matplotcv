@@ -27,7 +27,7 @@ class MPLWidget(Widget):
     image = ObjectProperty()
     original_image_toggle = ObjectProperty()
     pipeline = Pipeline()
-    contours = []
+    contours = {}
     which_contours = None
 
     def __init__(self, **kwargs):
@@ -73,7 +73,7 @@ class MPLWidget(Widget):
         threshold = float(threshold)
 
         pos = self.image.to_widget(*pos)
-        for contour in self.contours:
+        for contour in self.contours.values():
             contour.hovered = contour.collide_point(*pos, threshold)
 
     def on_load_image_button_press(self):
@@ -206,26 +206,26 @@ class MPLWidget(Widget):
             if self.contours:
                 self.clear_contour()
 
-            for c in p.contours:
-                contour = Contour(self.map_contour(c))
-                if contour not in self.contours:
+            for k, c in p.contours.items():
+                if k not in self.contours:
+                    contour = Contour(k, self.map_contour(c))
                     self.image.add_widget(contour)
-                    self.contours.append(contour)
+                    self.contours[k] = contour
 
-    def replace_contour(self, old, new):
+    def replace_contour(self, old: int, new: dict):
         if old in self.contours:
             self.clear_contour(old)
 
-            for contour in new:
-                contour = Contour(self.map_contour(contour))
+            for k, c in new:
+                contour = Contour(k, self.map_contour(c))
                 self.image.add_widget(contour)
-                self.contours.append(contour)
+                self.contours[k] = contour
 
-    def clear_contour(self, contour: Contour | None = None):
-        contours = self.contours[:] if contour is None else [contour]
-        for contour in contours:
-            self.image.remove_widget(contour)
-            self.contours.remove(contour)
+    def clear_contour(self, key: int | None = None):
+        keys = self.contours.keys() if key is None else [key]
+        for key in list(keys):
+            self.image.remove_widget(self.contours[key])
+            self.contours.pop(key)
 
 
 class MPLApp(App):
