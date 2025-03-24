@@ -216,7 +216,7 @@ class MPLWidget(Widget):
         if old in self.contours:
             self.clear_contour(old)
 
-            for k, c in new:
+            for k, c in new.items():
                 contour = Contour(k, self.map_contour(c))
                 self.image.add_widget(contour)
                 self.contours[k] = contour
@@ -228,6 +228,9 @@ class MPLWidget(Widget):
 
         subkeys = self.pipeline.subcontours(key)
 
+        self.replace_contour(
+            key, {k: self.pipeline.contours[k] for k in subkeys}
+        )
 
     def clear_contour(self, key: int | None = None):
         keys = self.contours.keys() if key is None else [key]
