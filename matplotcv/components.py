@@ -45,3 +45,7 @@ class ToolsDropDown(DropDown):
         super().__init__(**kwargs)
         self.blur_dropdown = Factory.BlurDropDown()
         self.detect_edges_dropdown = Factory.DetectEdgesDropDown()
+
+
+class ContourDropDown(DropDown):
+    pass

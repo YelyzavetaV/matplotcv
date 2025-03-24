@@ -148,19 +148,19 @@ class Pipeline:
 
         points = self.contours[key]
 
-        reduced = cv.approxPolyDP(
+        corners = cv.approxPolyDP(
             np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
             epsilon,
             closed,
         )
 
         # Extract corners
-        corners = [tuple(p[0]) for p in reduced]
+        # corners = [p[0] for p in reduced]
 
         contours, current = [], []
         for p in points:
             current.append(p)
-            if p in corners:
+            if any(np.array_equal(p, corner) for corner in corners):
                 contours.append(
                     np.array(current, dtype=np.int32).reshape(-1, 1, 2)
                 )

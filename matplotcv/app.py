@@ -221,6 +221,14 @@ class MPLWidget(Widget):
                 self.image.add_widget(contour)
                 self.contours[k] = contour
 
+    def split_contour(self, key: int):
+        contour = self.pipeline.contours.get(key)
+        if contour is None:  # Shouldn't happen
+            raise RuntimeError('Contour not found')
+
+        subkeys = self.pipeline.subcontours(key)
+
+
     def clear_contour(self, key: int | None = None):
         keys = self.contours.keys() if key is None else [key]
         for key in list(keys):

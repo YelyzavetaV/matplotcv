@@ -1,13 +1,9 @@
 import math
-import numpy as np
-import cv2 as cv
-
-from kivy.lang import Builder
-from kivy.factory import Factory
+from kivy.app import App
 from kivy.uix.widget import Widget
+from kivy.uix.button import Button
 from kivy.graphics import Color, Line
-
-Builder.load_file('contour.kv')
+from components import ContourDropDown
 
 
 def _point_segment_distance(
@@ -38,11 +34,22 @@ class Contour(Widget):
 
         self.selected = False
         self._hovered = False
+        self.key = key
 
         self.update(points)
 
-        self.dropdown = Factory.ContourDropDown()
-        self.dropdown.contour_key = key
+        self.dropdown = ContourDropDown()
+
+        # Delegate contour actions to MPLWidget
+        mpl_widget = App.get_running_app().mpl_widget
+        actions = {
+            'Split': lambda i: mpl_widget.split_contour(self.key),
+            'Clear': lambda i: mpl_widget.clear_contour(self.key),
+        }
+        for action, callback in actions.items():
+            button = Button(text=action, height=50, size_hint_y=None)
+            button.bind(on_press=callback, on_release=self.dropdown.dismiss)
+            self.dropdown.add_widget(button)
 
     @property
     def hovered(self):
@@ -85,27 +92,3 @@ class Contour(Widget):
             self.dropdown.pos = touch.pos
             return True
         return super().on_touch_down(touch)
-
-    def subcontours(self, epsilon=5.0, closed=False):
-        '''
-        Split contour at corners to obtain subcontours.
-        '''
-        points = self.points
-
-        reduced = cv.approxPolyDP(
-            np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
-            epsilon,
-            closed,
-        )
-
-        # Extract corners
-        corners = [tuple(p[0]) for p in reduced]
-
-        contours, current = [], []
-        for p in points:
-            current.append(p)
-            if p in corners:
-                contours.append(current)
-                current = [p]
-
-        return contours
