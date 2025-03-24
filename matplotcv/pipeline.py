@@ -138,7 +138,10 @@ class Pipeline:
         self.contours = {i: c for i, c in enumerate(contours)}
 
     def subcontours(
-        self, key: int, epsilon: float = 5.0, closed: bool = False
+        self,
+        key: int,
+        epsilon: float = 5.0,
+        closed: bool = False,
     ) -> list[int]:
         '''
         Split contour at corners to obtain subcontours.

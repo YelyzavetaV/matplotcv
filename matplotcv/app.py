@@ -1,16 +1,14 @@
 import cv2 as cv
-
 import kivy
+from kivy.factory import Factory
 from kivy.core.window import Window
 from kivy.app import App
-from kivy.factory import Factory
 from kivy.uix.widget import Widget
 from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
-
 import exceptions
 from components import FileChooserContent, ToolsDropDown
 from pipeline import Pipeline
@@ -52,9 +50,7 @@ class MPLWidget(Widget):
         )
 
         self.draw_dropdown = Factory.DrawDropDown()
-        self.draw_dropdown.bind(
-            on_select=lambda i, v: self.draw_contours(v)
-        )
+        self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours(v))
 
     #---------------------------
     # UI operations
@@ -229,7 +225,8 @@ class MPLWidget(Widget):
         subkeys = self.pipeline.subcontours(key)
 
         self.replace_contour(
-            key, {k: self.pipeline.contours[k] for k in subkeys}
+            key, {k: self.pipeline.contours[k]
+                  for k in subkeys}
         )
 
     def clear_contour(self, key: int | None = None):

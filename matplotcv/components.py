@@ -1,9 +1,12 @@
 import os.path
+from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.uix.scatter import Scatter
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.properties import ObjectProperty
+
+Builder.load_file('components.kv')
 
 
 def print_widget_hierarchy(widget, level=0):
@@ -13,6 +16,7 @@ def print_widget_hierarchy(widget, level=0):
 
 
 class TransparentScatter(Scatter):
+
     def on_touch_down(self, touch):
         # Prevent Scatter from bringing itself to the front
         if self.collide_point(*touch.pos):

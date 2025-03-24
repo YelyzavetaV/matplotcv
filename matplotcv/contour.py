@@ -29,6 +29,7 @@ def _point_segment_distance(
 
 class Contour(Widget):
     '''Handles interactable contours.'''
+
     def __init__(self, key, points, **kwargs):
         super().__init__(**kwargs)
 

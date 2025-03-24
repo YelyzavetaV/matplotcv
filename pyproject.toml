@@ -1,0 +1,4 @@
+[tool.yapf]
+based_on_style = 'pep8'
+column_limit = 79
+dedent_closing_brackets = true
