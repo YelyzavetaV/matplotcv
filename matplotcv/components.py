@@ -94,7 +94,12 @@ class ToolsDropDown(DropDown):
 
 
 class ContourDropDown(DropDown):
-    pass
+    label_axis_dropdown = ObjectProperty()
+    open_nested_dropdown = staticmethod(open_nested_dropdown)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.label_axis_dropdown = Factory.LabelAxisDropDown()
 
 
 class ContourWidget(Widget):
@@ -116,11 +121,18 @@ class ContourWidget(Widget):
         actions = {
             'Split': lambda i: mpl_widget.split_contour(self.key),
             'Clear': lambda i: mpl_widget.clear_contour(self.key),
+            'Label as...': lambda i: self.dropdown.open_nested_dropdown(
+                self.dropdown.label_axis_dropdown, i
+            ),
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
             button.bind(on_press=callback, on_release=self.dropdown.dismiss)
             self.dropdown.add_widget(button)
+
+        self.dropdown.label_axis_dropdown.bind(
+            on_select=lambda i, v: mpl_widget.label_contour(self.key, v)
+        )
 
     @property
     def hovered(self):

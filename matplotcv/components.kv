@@ -133,3 +133,33 @@
         valign: 'middle'
         padding: (5, 0)
         on_release: root.select('external')
+
+<ContourDropDown@DropDown>:
+    auto_width: False
+    width: 200
+
+<LabelAxisDropDown@DropDown>:
+    auto_width: False
+    width: 100
+
+    Button:
+        text: 'X'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('x')
+        on_release: root.dismiss()
+
+    Button:
+        text: 'Y'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('y')
+        on_release: root.dismiss()

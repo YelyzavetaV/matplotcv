@@ -28,7 +28,7 @@ sizes = {
 @dataclass
 class Contour:
     points: np.ndarray
-    axis: bool = field(default=False, init=False)
+    label: str = field(default='', init=False)
     closed: bool = False
 
 
