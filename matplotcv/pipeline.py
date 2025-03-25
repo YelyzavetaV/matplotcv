@@ -1,5 +1,6 @@
 import os.path
 import warnings
+from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
 
@@ -22,6 +23,13 @@ sizes = {
     'fhd': (1920, 1080),
     '4k': (3840, 2160),
 }
+
+
+@dataclass
+class Contour:
+    points: np.ndarray
+    axis: bool = field(default=False, init=False)
+    closed: bool = False
 
 
 class Pipeline:
@@ -135,30 +143,23 @@ class Pipeline:
         contours, _ = cv.findContours(
             self._image, mode, cv.CHAIN_APPROX_SIMPLE
         )
-        self.contours = {i: c for i, c in enumerate(contours)}
+        self.contours = {i: Contour(c) for i, c in enumerate(contours)}
 
-    def subcontours(
-        self,
-        key: int,
-        epsilon: float = 5.0,
-        closed: bool = False,
-    ) -> list[int]:
+    def subcontours(self, key: int, epsilon: float = 5.0) -> list[int]:
         '''
         Split contour at corners to obtain subcontours.
         '''
-        if key not in self.contours:
+        contour = self.contours.get(key)
+        if contour is None:
             raise ValueError(f'Contour {key} not found')
 
-        points = self.contours[key]
+        points = contour.points
 
         corners = cv.approxPolyDP(
             np.array(points, dtype=np.int32).reshape([-1, 1, 2]),
             epsilon,
-            closed,
+            contour.closed,
         )
-
-        # Extract corners
-        # corners = [p[0] for p in reduced]
 
         contours, current = [], []
         for p in points:
@@ -171,5 +172,5 @@ class Pipeline:
 
         # Create unique keys for new contours
         keys = [max(self.contours) + i + 1 for i in range(len(contours))]
-        self.contours.update({k: c for k, c in zip(keys, contours)})
+        self.contours.update({k: Contour(c) for k, c in zip(keys, contours)})
         return keys

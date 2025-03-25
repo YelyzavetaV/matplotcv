@@ -10,9 +10,8 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
 import exceptions
-from components import FileChooserContent, ToolsDropDown
+from components import FileChooserContent, ToolsDropDown, ContourWidget
 from pipeline import Pipeline
-from contour import Contour
 
 kivy.require('2.3.0')
 Logger.setLevel(LOG_LEVELS['debug'])
@@ -182,7 +181,7 @@ class MPLWidget(Widget):
 
         return [
             (x + p[0][0] * scale[0], y + h - p[0][1] * scale[1])
-            for p in contour
+            for p in contour.points
         ]
 
     def draw_contours(self, which: str = 'all'):
@@ -204,7 +203,7 @@ class MPLWidget(Widget):
 
             for k, c in p.contours.items():
                 if k not in self.contours:
-                    contour = Contour(k, self.map_contour(c))
+                    contour = ContourWidget(k, self.map_contour(c))
                     self.image.add_widget(contour)
                     self.contours[k] = contour
 
@@ -213,7 +212,7 @@ class MPLWidget(Widget):
             self.clear_contour(old)
 
             for k, c in new.items():
-                contour = Contour(k, self.map_contour(c))
+                contour = ContourWidget(k, self.map_contour(c))
                 self.image.add_widget(contour)
                 self.contours[k] = contour
 
