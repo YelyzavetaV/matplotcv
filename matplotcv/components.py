@@ -1,6 +1,8 @@
 import os.path
 from kivy.lang import Builder
 from kivy.factory import Factory
+from kivy.core.window import Window
+from kivy.uix.button import Button
 from kivy.uix.scatter import Scatter
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
@@ -22,6 +24,42 @@ class TransparentScatter(Scatter):
         if self.collide_point(*touch.pos):
             return super(Scatter, self).on_touch_down(touch)
         return False
+
+
+class HoverButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self._hovered = False
+        self.background_hovered = kwargs.get(
+            'background_hovered', self.background_normal
+        )
+
+        Window.bind(mouse_pos=self.on_mouse_move)
+
+    def on_kv_post(self, widget):
+        self._background_normal = self.background_normal
+        return super().on_kv_post(widget)
+
+    @property
+    def hovered(self):
+        return self._hovered
+
+    def on_mouse_move(self, window, pos):
+        if self.collide_point(*self.to_widget(*pos)):
+            if not self.hovered:
+                self.on_enter()
+        else:
+            if self.hovered:
+                self.on_leave()
+
+    def on_enter(self):
+        self._hovered = True
+        self.background_normal = self.background_hovered
+
+    def on_leave(self):
+        self._hovered = False
+        self.background_normal = self._background_normal
 
 
 class FileChooserContent(BoxLayout):

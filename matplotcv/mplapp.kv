@@ -40,10 +40,11 @@
             height: 120
             width: 120
 
-            Button:
+            HoverButton:
                 on_release: webbrowser.open('https://github.com/YelyzavetaV/matplotcv.git')
                 background_normal: 'images/github_icon_normal.png'
                 background_down: 'images/github_icon_down.png'
+                background_hovered: 'images/github_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
@@ -65,57 +66,63 @@
             height: 120
             width: 900
 
-            Button:
+            HoverButton:
                 id: load_image_button
                 on_release: root.on_load_image_button_press()
                 background_normal: 'images/new_file_icon_normal.png'
                 background_down: 'images/new_file_icon_down.png'
+                background_hovered: 'images/new_file_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: bin_button
                 on_release: root.clear()
                 background_normal: 'images/bin_icon_normal.png'
                 background_down: 'images/bin_icon_down.png'
+                background_hovered: 'images/bin_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: reduce_button
                 on_release: root.reduce_dropdown.open(self)
                 # on_release: root.reduce_dropdown.dismiss()
                 background_normal: 'images/reduce_icon_normal.png'
                 background_down: 'images/reduce_icon_down.png'
+                background_hovered: 'images/reduce_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: draw_button
                 on_release: root.draw_dropdown.open(self)
                 background_normal: 'images/draw_icon_normal.png'
                 background_down: 'images/draw_icon_down.png'
+                background_hovered: 'images/draw_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: erase_button
                 on_release: root.clear_contour()
                 background_normal: 'images/erase_icon_normal.png'
                 background_down: 'images/erase_icon_down.png'
+                background_hovered: 'images/erase_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: tools_button
                 on_release: root.tools_dropdown.open(self)
                 background_normal: 'images/tools_icon_normal.png'
                 background_down: 'images/tools_icon_down.png'
+                background_hovered: 'images/tools_icon_down.png'
                 height: root.height
                 width: 100
                 border: 0, 0, 0, 0
@@ -162,18 +169,20 @@
             height: 120
             width: 275
 
-            Button:
+            HoverButton:
                 id: zoom_in_button
                 on_release: root.zoom(1.1)
                 background_normal: 'images/plus_icon_normal.png'
                 background_down: 'images/plus_icon_down.png'
+                background_hovered: 'images/plus_icon_down.png'
                 width: 100
                 border: 0, 0, 0, 0
 
-            Button:
+            HoverButton:
                 id: zoom_out_button
                 on_release: root.zoom(0.9)
                 background_normal: 'images/minus_icon_normal.png'
                 background_down: 'images/minus_icon_down.png'
+                background_hovered: 'images/minus_icon_down.png'
                 width: 100
                 border: 0, 0, 0, 0
