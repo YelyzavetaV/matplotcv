@@ -232,7 +232,8 @@ class MPLWidget(Widget):
         if key not in self.pipeline.contours:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
-        self.pipeline.contours[key].label = label
+        if label == 'x' or label == 'y':
+            self.pipeline.contours[key].asaxis(label)
 
     def clear_contour(self, key: int | None = None):
         keys = self.contours.keys() if key is None else [key]

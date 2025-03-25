@@ -31,6 +31,9 @@ class Contour:
     label: str = field(default='', init=False)
     closed: bool = False
 
+    def asaxis(self, label: str):
+        self.label = label
+
 
 class Pipeline:
     '''Pipeline controls all OpenCV computations.'''
