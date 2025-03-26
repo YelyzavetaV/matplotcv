@@ -230,6 +230,8 @@ class MPLWidget(Widget):
         if key not in self.pipeline.contours:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
+        Logger.debug(f'Labeling contour {key} as {label}')
+
         match label:
             case 'tick':
                 self.pipeline.find_contour_label(key=key)
@@ -237,7 +239,7 @@ class MPLWidget(Widget):
             case 'x' | 'y':
                 raise NotImplementedError('Labeling by axis not implemented')
             case _:
-                self.pipeline[key].label = label
+                self.pipeline.contours[key].label = label
 
     def clear_contour(self, key: int | None = None):
         keys = self.contours.keys() if key is None else [key]

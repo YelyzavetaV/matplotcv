@@ -1,4 +1,4 @@
-<FileChooserContent@PopUp>:
+<FileChooserContent@Popup>:
     file_chooser: file_chooser
     load_button: load_button
 
@@ -25,6 +25,34 @@
             Button:
                 text: 'Cancel'
                 on_press: root.cancel()
+
+<TickInputPopup@Popup>
+    title: 'Enter coordinate'
+    size_hint: (0.5, 0.5)
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 10
+        padding: 10
+
+        TextInput:
+            id: tick_input_field
+            hint_text: 'Type here'
+
+        BoxLayout:
+            size_hint_y: None
+            height: 50
+            spacing: 30
+
+            Button:
+                text: 'Confirm'
+                on_press: root.on_submit(tick_input_field.text)
+                on_release: root.dismiss()
+
+            Button:
+                text: 'Cancel'
+                on_release: root.dismiss()
+
 
 <ResizeDropDown@DropDown>:
     auto_width: False
@@ -172,5 +200,5 @@
         halign: 'center'
         valign: 'middle'
         padding: (5, 0)
-        on_press: root.select('tick')
+        on_press: root.select('xtick')
         on_release: root.dismiss()

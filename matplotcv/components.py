@@ -133,7 +133,7 @@ class ContourWidget(Widget):
             self.dropdown.add_widget(button)
 
         self.dropdown.label_axis_dropdown.bind(
-            on_select=lambda i, v: mpl_widget.label_contour(self.key, v)
+            on_select=self.on_label_selection
         )
 
     @property
@@ -177,3 +177,16 @@ class ContourWidget(Widget):
             self.dropdown.pos = touch.pos
             return True
         return super().on_touch_down(touch)
+
+    def on_label_selection(self, instance, value):
+        mpl_widget = App.get_running_app().mpl_widget
+
+        match value:
+            case 'xtick' | 'ytick':
+                input_popup = Factory.TickInputPopup()
+                input_popup.on_submit = lambda v: mpl_widget.label_contour(
+                    self.key, v
+                )
+                input_popup.open()
+            case _:
+                mpl_widget.label_contour(self.key, value)
