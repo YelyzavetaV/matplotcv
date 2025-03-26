@@ -30,7 +30,7 @@ class Contour:
     points: np.ndarray
     label: str = field(default='', init=False)
     closed: bool = False
-    roi: np.ndarray | None = field(default=None, init=False)
+    roi: tuple | None = field(default=None, init=False)
     children: set[int] = field(default_factory=set, init=False)
 
 
@@ -140,19 +140,25 @@ class Pipeline:
         self.isedgy = True
 
     def find_contours(self, external: bool = False, key: int | None = None):
-        mode = cv.RETR_EXTERNAL if external else cv.RETR_TREE
-
         if key is None:  # Search in the entire image
             contours, _ = cv.findContours(
-                self._processed, mode, cv.CHAIN_APPROX_SIMPLE
+                self._processed,
+                cv.RETR_EXTERNAL if external else cv.RETR_TREE,
+                cv.CHAIN_APPROX_SIMPLE,
             )
             self.contours = {i: Contour(c) for i, c in enumerate(contours)}
         else:  # Search in the parent contour
             self.contour_roi(key)
+            x, y, w, h = self.contours[key].roi
+            roi = self.processed[y : h, x : w]
+
             contours, _ = cv.findContours(
-                self.contours[key].roi, mode, cv.CHAIN_APPROX_SIMPLE
+                roi, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
             )
             for contour in contours:
+                # Translate contour to the original image coordinates
+                contour += np.array([x, y])
+
                 idx = [  # Check if the contour already exists
                     i for i, c in self.contours.items()
                     if np.array_equal(contour, c)
@@ -196,7 +202,7 @@ class Pipeline:
         self.contours.pop(key)
         return keys
 
-    def contour_roi(self, key: int, padding: int = 10):
+    def contour_roi(self, key: int, padding: int = 20):
         if self.contours.get(key) is None:
             raise ValueError(f'Contour {key} not found')
 
@@ -208,5 +214,4 @@ class Pipeline:
                 min(self.processed.shape[1], x + w + padding),
                 min(self.processed.shape[0], y + h + padding),
             )
-
-            self.contours[key].roi = self.processed[y : h, x : w]
+            self.contours[key].roi = (x, y, w, h)
