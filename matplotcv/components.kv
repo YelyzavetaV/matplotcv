@@ -163,3 +163,14 @@
         padding: (5, 0)
         on_press: root.select('y')
         on_release: root.dismiss()
+
+    Button:
+        text: 'Tick'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('tick')
+        on_release: root.dismiss()

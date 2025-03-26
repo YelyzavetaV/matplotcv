@@ -25,7 +25,7 @@ class MPLWidget(Widget):
     original_image_toggle = ObjectProperty()
     pipeline = Pipeline()
     contours = {}
-    which_contours = None
+    drawn_contours = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -58,7 +58,7 @@ class MPLWidget(Widget):
         if self.contours:
             Clock.unschedule(self.draw_contours)  # Prevent multiple calls
             Clock.schedule_once(
-                lambda dt: self.draw_contours(self.which_contours), 0.1
+                lambda dt: self.draw_contours(self.drawn_contours), 0.1
             )
 
     def on_mouse_move(self, window, pos):
@@ -91,7 +91,7 @@ class MPLWidget(Widget):
 
                     self.pipeline.load_image(selection[0])
 
-                    if self.pipeline.empty:
+                    if self.pipeline.isempty:
                         raise exceptions.ImageLoadError()
 
                     self.update_image()
@@ -128,12 +128,12 @@ class MPLWidget(Widget):
             self.image.size = (w, w / aspect)
 
     def update_image(self):
-        if not self.pipeline.empty:
+        if not self.pipeline.isempty:
             show_pipeline = self.app.config.get(
                 'General', 'show_pipeline'
             ) == 'On'
             image = (
-                self.pipeline.image
+                self.pipeline.processed
                 if show_pipeline else self.pipeline.original
             )
 
@@ -186,17 +186,17 @@ class MPLWidget(Widget):
 
     def draw_contours(self, which: str = 'all'):
         '''Draw OpenCV contours as widgets'''
-        if not self.pipeline.empty:
+        if not self.pipeline.isempty:
             p = self.pipeline
 
-            if self.which_contours != which:
-                self.which_contours = which
-                self.pipeline.clear('processed')
+            self.drawn_contours = which
 
-            if not p.edges_detected:
+            if not p.isedgy:
                 p.edges()
             if not p.contours:
-                p.contour_tree(which)
+                p.find_contours(
+                    external=True if which == 'external' else False
+                )
 
             if self.contours:
                 self.clear_contour()
@@ -221,7 +221,7 @@ class MPLWidget(Widget):
         if contour is None:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
-        subkeys = self.pipeline.subcontours(key)
+        subkeys = self.pipeline.split_contour(key)
 
         self.replace_contour(
             key, {k: self.pipeline.contours[k]
@@ -232,8 +232,14 @@ class MPLWidget(Widget):
         if key not in self.pipeline.contours:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
-        if label == 'x' or label == 'y':
-            self.pipeline.contours[key].asaxis(label)
+        match label:
+            case 'tick':
+                self.pipeline.find_contours(key=key)
+                self.draw_contours(self.drawn_contours)
+            case 'x' | 'y':
+                raise NotImplementedError('Labeling by axis not implemented')
+            case _:
+                self.pipeline[key].label = label
 
     def clear_contour(self, key: int | None = None):
         keys = self.contours.keys() if key is None else [key]
