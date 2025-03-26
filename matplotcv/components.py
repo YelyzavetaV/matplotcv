@@ -1,4 +1,5 @@
 import os.path
+import matplotlib.colors as colors
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -105,12 +106,13 @@ class ContourDropDown(DropDown):
 class ContourWidget(Widget):
     '''Handles interactable contours.'''
 
-    def __init__(self, key, points, **kwargs):
+    def __init__(self, key, points, color='blue', **kwargs):
         super().__init__(**kwargs)
 
         self.selected = False
         self._hovered = False
         self.key = key
+        self.color = colors.to_rgba(color)
 
         self.update(points)
 
@@ -152,7 +154,7 @@ class ContourWidget(Widget):
             if self.hovered:
                 Color(0, 1, 0, 1)
             else:
-                Color(0, 0, 1, 1)
+                Color(*self.color)
 
             Line(points=sum(points, ()), width=2)
 

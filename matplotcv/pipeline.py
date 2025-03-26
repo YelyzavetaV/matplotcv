@@ -3,6 +3,7 @@ import warnings
 from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
+import pytesseract
 
 supported_exts = (
     '.png',
@@ -170,7 +171,6 @@ class Pipeline:
                     self.contours[idx] = Contour(contour)
                     self.contours[key].children.add(idx)
 
-
     def split_contour(self, key: int, epsilon: float = 5.0) -> list[int]:
         '''
         Split contour at corners to obtain subcontours.
@@ -202,16 +202,33 @@ class Pipeline:
         self.contours.pop(key)
         return keys
 
-    def contour_roi(self, key: int, padding: int = 20):
+    def contour_roi(self, key: int, fraction: float = 0.05):
         if self.contours.get(key) is None:
             raise ValueError(f'Contour {key} not found')
 
         if self.contours[key].roi is None:
+            px, py = (
+                int(fraction * self.processed.shape[1]),
+                int(fraction * self.processed.shape[0]),
+            )
+
             x, y, w, h = cv.boundingRect(self.contours[key].points)
             x, y, w, h = (
-                max(0, x - padding),
-                max(0, y - padding),
-                min(self.processed.shape[1], x + w + padding),
-                min(self.processed.shape[0], y + h + padding),
+                max(0, x - px),
+                max(0, y - py),
+                min(self.processed.shape[1], x + w + px),
+                min(self.processed.shape[0], y + h + py),
             )
             self.contours[key].roi = (x, y, w, h)
+
+    def find_contour_label(self, key: int):
+        if key not in self.contours:
+            raise ValueError(f'Contour {key} not found')
+
+        self.find_contours(key=key)
+
+        x, y, w, h = self.contours[key].roi
+        roi = self.processed[y : h, x : w]
+
+        config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789^eE+-.'
+        label = pytesseract.image_to_string(roi, config=config)

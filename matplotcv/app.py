@@ -49,7 +49,9 @@ class MPLWidget(Widget):
         )
 
         self.draw_dropdown = Factory.DrawDropDown()
-        self.draw_dropdown.bind(on_select=lambda i, v: self.draw_contours(v))
+        self.draw_dropdown.bind(
+            on_select=lambda i, v: self.draw_contours(color=v)
+        )
 
     #---------------------------
     # UI operations
@@ -58,7 +60,7 @@ class MPLWidget(Widget):
         if self.contours:
             Clock.unschedule(self.draw_contours)  # Prevent multiple calls
             Clock.schedule_once(
-                lambda dt: self.draw_contours(self.drawn_contours), 0.1
+                lambda dt: self.draw_contours(redraw=True), 0.1
             )
 
     def on_mouse_move(self, window, pos):
@@ -184,26 +186,22 @@ class MPLWidget(Widget):
             for p in contour.points
         ]
 
-    def draw_contours(self, which: str = 'all'):
+    def draw_contours(self, color='blue', redraw=False):
         '''Draw OpenCV contours as widgets'''
         if not self.pipeline.isempty:
             p = self.pipeline
 
-            self.drawn_contours = which
-
             if not p.isedgy:
                 p.edges()
             if not p.contours:
-                p.find_contours(
-                    external=True if which == 'external' else False
-                )
+                p.find_contours()
 
-            if self.contours:
+            if redraw:
                 self.clear_contour()
 
             for k, c in p.contours.items():
                 if k not in self.contours:
-                    contour = ContourWidget(k, self.map_contour(c))
+                    contour = ContourWidget(k, self.map_contour(c), color)
                     self.image.add_widget(contour)
                     self.contours[k] = contour
 
@@ -234,8 +232,8 @@ class MPLWidget(Widget):
 
         match label:
             case 'tick':
-                self.pipeline.find_contours(key=key)
-                self.draw_contours(self.drawn_contours)
+                self.pipeline.find_contour_label(key=key)
+                self.draw_contours(color='red')
             case 'x' | 'y':
                 raise NotImplementedError('Labeling by axis not implemented')
             case _:
