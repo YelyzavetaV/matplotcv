@@ -129,7 +129,7 @@ class ContourWidget(Widget):
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
-            button.bind(on_press=callback, on_release=self.dropdown.dismiss)
+            button.bind(on_press=callback)
             self.dropdown.add_widget(button)
 
         self.dropdown.label_axis_dropdown.bind(
@@ -179,6 +179,8 @@ class ContourWidget(Widget):
         return super().on_touch_down(touch)
 
     def on_label_selection(self, instance, value):
+        self.dropdown.dismiss()
+
         mpl_widget = App.get_running_app().mpl_widget
 
         match value:
