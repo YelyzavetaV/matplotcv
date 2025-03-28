@@ -11,7 +11,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.graphics import Color, Line
 from kivy.properties import ObjectProperty
-from utils import point_segment_distance
+from metrics import point_segment_distance
 
 Builder.load_file('components.kv')
 
@@ -182,11 +182,11 @@ class ContourWidget(Widget):
         mpl_widget = App.get_running_app().mpl_widget
 
         match value:
-            case 'xtick' | 'ytick':
+            case 'tick':
                 input_popup = Factory.TickInputPopup()
                 input_popup.on_submit = lambda v: mpl_widget.label_contour(
-                    self.key, v
+                    self.key, coordinate=v,
                 )
                 input_popup.open()
             case _:
-                mpl_widget.label_contour(self.key, value)
+                mpl_widget.label_contour(self.key, label=value)

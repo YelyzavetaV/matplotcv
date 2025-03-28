@@ -1,22 +1,32 @@
+import re
 import math
 
 
-def point_segment_distance(
-    point: tuple[float], segment: tuple[tuple[float]]
-) -> float:
-    '''Calculate the distance between a point and a line segment.'''
-    x, y = point
-    sx, sy = segment[0]
-    ex, ey = segment[1]
+coordinate_patterns = {
+    'scientific': r'^[+-]?\d+(\.\d+)?([eE\^][+-]?\d+)?$',
+}
 
-    length = (ex - sx)**2 + (ey - sy)**2
-    if length == 0:  # Segment's start and end points are the same
-        return math.sqrt((x - sx)**2 + (y - sy)**2)
 
-    # Calculate the projection of the point onto the line
-    tau = max(
-        0, min(1, ((x - sx) * (ex - sx) + (y - sy) * (ey - sy)) / length)
-    )
-    proj = (sx + tau * (ex - sx), sy + tau * (ey - sy))
+def standard_coordinate(coordinate: str):
+    coordinate = coordinate.strip()
 
-    return math.sqrt((x - proj[0])**2 + (y - proj[1])**2)
+    for notation, pattern in coordinate_patterns.items():
+        if re.match(pattern, coordinate):
+            break
+    else:
+        raise ValueError(
+            f'Coordinate {coordinate} does not match any known notation.'
+        )
+
+    match notation:
+        case 'scientific':
+            coordinate = coordinate.replace('^', '**')
+            if '**' in coordinate:
+                coordinate = coordinate.split('**')
+                coordinate = math.pow(
+                    float(coordinate[0]), float(coordinate[1])
+                )
+
+            return coordinate
+        case _:  # Shouldn't happen
+            pass

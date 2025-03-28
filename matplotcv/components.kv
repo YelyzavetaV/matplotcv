@@ -168,7 +168,7 @@
 
 <LabelAxisDropDown@DropDown>:
     auto_width: False
-    width: 200
+    width: 150
 
     Button:
         text: 'X'
@@ -193,12 +193,12 @@
         on_release: root.dismiss()
 
     Button:
-        text: 'Manual X tick'
+        text: 'Tick'
         height: 50
         size_hint_y: None
         text_size: self.size
         halign: 'center'
         valign: 'middle'
         padding: (5, 0)
-        on_press: root.select('xtick')
+        on_press: root.select('tick')
         on_release: root.dismiss()

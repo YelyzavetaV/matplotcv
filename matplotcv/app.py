@@ -165,7 +165,7 @@ class MPLWidget(Widget):
 
     def clear(self):
         self.pipeline.clear('all')
-        self.clear_contour()
+        self.clear_contour(self.contours.keys())
         self.image.texture = None
 
     #---------------------------
@@ -186,7 +186,9 @@ class MPLWidget(Widget):
             for p in contour.points
         ]
 
-    def draw_contours(self, color='blue', redraw=False):
+    def draw_contours(
+        self, color='blue', redraw=False, contours: set[int] | None = None
+    ):
         '''Draw OpenCV contours as widgets'''
         if not self.pipeline.isempty:
             p = self.pipeline
@@ -196,18 +198,22 @@ class MPLWidget(Widget):
             if not p.contours:
                 p.find_contours()
 
-            if redraw:
-                self.clear_contour()
+            contours = contours if contours is not None else p.contours.keys()
 
-            for k, c in p.contours.items():
+            if redraw:
+                self.clear_contour(contours)
+
+            for k in p.contours:
                 if k not in self.contours:
-                    contour = ContourWidget(k, self.map_contour(c), color)
+                    contour = ContourWidget(
+                        k, self.map_contour(p.contours[k]), color
+                    )
                     self.image.add_widget(contour)
                     self.contours[k] = contour
 
     def replace_contour(self, old: int, new: dict):
         if old in self.contours:
-            self.clear_contour(old)
+            self.clear_contour({old})
 
             for k, c in new.items():
                 contour = ContourWidget(k, self.map_contour(c))
@@ -226,23 +232,31 @@ class MPLWidget(Widget):
                   for k in subkeys}
         )
 
-    def label_contour(self, key: int, label: str):
+    def label_contour(
+            self,
+            key: int,
+            label: str | None = None,
+            coordinate: str | None = None,
+        ):
         if key not in self.pipeline.contours:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
-        Logger.debug(f'Labeling contour {key} as {label}')
+        Logger.debug(
+            f'Labeling contour {key} as {label} at {coordinate}'
+        )
 
-        match label:
-            case 'tick':
-                self.pipeline.find_contour_label(key=key)
-                self.draw_contours(color='red')
-            case 'x' | 'y':
-                raise NotImplementedError('Labeling by axis not implemented')
-            case _:
-                self.pipeline.contours[key].label = label
+        if label is not None:
+            self.pipeline.contours[key].label = label
+        if coordinate is not None:
+            self.pipeline.contours[key].coordinate = coordinate
 
-    def clear_contour(self, key: int | None = None):
-        keys = self.contours.keys() if key is None else [key]
+        # Labeled contours are stored at the beginning to then quickly
+        # locate them
+        self.pipeline.contours.move_to_end(key, last=False)
+
+        self.draw_contours(color='red', redraw=True, contours={key})
+
+    def clear_contour(self, keys: set[int]):
         for key in list(keys):
             self.image.remove_widget(self.contours[key])
             self.contours.pop(key)

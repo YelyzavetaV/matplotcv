@@ -1,9 +1,11 @@
 import os.path
 import warnings
+from collections import OrderedDict
 from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
 import pytesseract
+from utils import standard_coordinate
 
 supported_exts = (
     '.png',
@@ -28,11 +30,29 @@ sizes = {
 
 @dataclass
 class Contour:
+    '''Stores contour points and additional information.'''
     points: np.ndarray
     label: str = field(default='', init=False)
+    _coordinate: tuple | None = field(default=None, init=False)
     closed: bool = False
     roi: tuple | None = field(default=None, init=False)
     children: set[int] = field(default_factory=set, init=False)
+
+    @property
+    def coordinate(self):
+        return self._coordinate
+
+    @coordinate.setter
+    def coordinate(self, value: str):
+        try:
+            x, y = value.split(',')
+            self._coordinate = (
+                standard_coordinate(x), standard_coordinate(y)
+            )
+        except Exception as e:
+            raise ValueError(f'Invalid coordinate format: {value}') from e
+
+        print(f'Coordinate set to {self.coordinate}')
 
 
 class Pipeline:
@@ -147,7 +167,7 @@ class Pipeline:
                 cv.RETR_EXTERNAL if external else cv.RETR_TREE,
                 cv.CHAIN_APPROX_SIMPLE,
             )
-            self.contours = {i: Contour(c) for i, c in enumerate(contours)}
+            self.contours = OrderedDict((i, Contour(c)) for i, c in enumerate(contours))
         else:  # Search in the parent contour
             self.contour_roi(key)
             x, y, w, h = self.contours[key].roi
