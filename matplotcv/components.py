@@ -10,7 +10,7 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.graphics import Color, Line
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, StringProperty
 from metrics import point_segment_distance
 
 Builder.load_file('components.kv')
@@ -78,9 +78,14 @@ class FileChooserContent(BoxLayout):
 
 
 def open_nested_dropdown(dropdown, button):
+    '''
+    Open a nested dropdown and align it with the parent at the bottom.
+    '''
     dropdown.open(button)
     pos = button.to_window(button.x, button.y, relative=True)
-    dropdown.pos = (pos[0] + button.width, pos[1])
+    dropdown.pos = (
+        pos[0] + button.width, pos[1] + button.height - dropdown.height
+    )
 
 
 class ToolsDropDown(DropDown):
@@ -92,6 +97,36 @@ class ToolsDropDown(DropDown):
         super().__init__(**kwargs)
         self.blur_dropdown = Factory.BlurDropDown()
         self.detect_edges_dropdown = Factory.DetectEdgesDropDown()
+
+
+class MathDropDown(DropDown):
+    log_scale_dropdown = ObjectProperty()
+    open_nested_dropdown = staticmethod(open_nested_dropdown)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.log_scale_dropdown = LogScaleDropDown()
+
+
+class LogScaleDropDown(DropDown):
+    selection = StringProperty('OFF')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.bind(on_select=self.update)
+
+    def open(self, *args):
+        for child in self.container.children:
+            child.state = 'down' if child.text == self.selection else 'normal'
+        super().open(*args)
+
+    def update(self, instance, value):
+        self.selection = value
+
+        app = App.get_running_app()
+        app.config.set('Math', 'log_scale', value)
+        app.config.write()
 
 
 class ContourDropDown(DropDown):

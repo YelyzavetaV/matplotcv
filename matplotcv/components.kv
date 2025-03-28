@@ -108,7 +108,8 @@
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_nested_dropdown(root.detect_edges_dropdown, self)
+        on_release:
+            root.open_nested_dropdown(root.detect_edges_dropdown, self)
 
 <BlurDropDown@DropDown>:
     auto_width: False
@@ -161,6 +162,69 @@
         valign: 'middle'
         padding: (5, 0)
         on_release: root.select('blue')
+
+<MathDropDown@DropDown>:
+    auto_width: False
+    width: 275
+
+    Button:
+        text: 'Logarithmic scale...'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release:
+            root.open_nested_dropdown(root.log_scale_dropdown, self)
+
+<LogScaleDropDown@DropDown>:
+    auto_width: False
+    width: 200
+
+    Button:
+        text: 'OFF'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('OFF')
+        on_release: root.dismiss()
+
+    Button:
+        text: 'X'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('X')
+        on_release: root.dismiss()
+
+    Button:
+        text: 'Y'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('Y')
+        on_release: root.dismiss()
+
+    Button:
+        text: 'XY'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        padding: (5, 0)
+        on_press: root.select('XY')
+        on_release: root.dismiss()
 
 <ContourDropDown@DropDown>:
     auto_width: False

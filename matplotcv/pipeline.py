@@ -4,7 +4,6 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
-import pytesseract
 from utils import standard_coordinate
 
 supported_exts = (
@@ -240,15 +239,3 @@ class Pipeline:
                 min(self.processed.shape[0], y + h + py),
             )
             self.contours[key].roi = (x, y, w, h)
-
-    def find_contour_label(self, key: int):
-        if key not in self.contours:
-            raise ValueError(f'Contour {key} not found')
-
-        self.find_contours(key=key)
-
-        x, y, w, h = self.contours[key].roi
-        roi = self.processed[y : h, x : w]
-
-        config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789^eE+-.'
-        label = pytesseract.image_to_string(roi, config=config)

@@ -10,7 +10,9 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
 import exceptions
-from components import FileChooserContent, ToolsDropDown, ContourWidget
+from components import (
+    FileChooserContent, ToolsDropDown, MathDropDown, ContourWidget
+)
 from pipeline import Pipeline
 
 kivy.require('2.3.0')
@@ -52,6 +54,8 @@ class MPLWidget(Widget):
         self.draw_dropdown.bind(
             on_select=lambda i, v: self.draw_contours(color=v)
         )
+
+        self.math_dropdown = MathDropDown()
 
     #---------------------------
     # UI operations
@@ -112,9 +116,13 @@ class MPLWidget(Widget):
 
     def on_original_image_toggle_press(self):
         if self.original_image_toggle.state == 'down':
-            self.app.config.set('General', 'show_pipeline', 'On')
+            self.app.config.set('General', 'show_pipeline', 'ON')
         else:
-            self.app.config.set('General', 'show_pipeline', 'Off')
+            self.app.config.set('General', 'show_pipeline', 'OFF')
+        self.app.config.write()
+
+    def on_log_scale_select(self, value):
+        self.app.config.set('Math', 'log_scale', value)
         self.app.config.write()
 
     #---------------------------
@@ -133,7 +141,7 @@ class MPLWidget(Widget):
         if not self.pipeline.isempty:
             show_pipeline = self.app.config.get(
                 'General', 'show_pipeline'
-            ) == 'On'
+            ) == 'ON'
             image = (
                 self.pipeline.processed
                 if show_pipeline else self.pipeline.original
@@ -273,8 +281,11 @@ class MPLApp(App):
         return self.mpl_widget
 
     def build_config(self, config):
+        config.adddefaultsection('Math')
+        config.setdefault('Math', 'log_scale', 'OFF')
+
         config.adddefaultsection('General')
-        config.setdefault('General', 'show_pipeline', 'Off')
+        config.setdefault('General', 'show_pipeline', 'OFF')
 
         config.adddefaultsection('Graphics')
         config.setdefault('Graphics', 'min_width', 800)
@@ -296,7 +307,7 @@ class MPLApp(App):
                 'desc': 'Show/hide the pipeline modifications',
                 'section': 'General',
                 'key': 'show_pipeline',
-                'values': ['On', 'Off']
+                'values': ['ON', 'OFF']
                 },
             ]
             '''
@@ -318,6 +329,24 @@ class MPLApp(App):
             data='''
             [
                 {'type': 'title', 'title': 'Advanced'},
+            ]
+            '''
+        )
+
+        settings.add_json_panel(
+            'Math',
+            self.config,
+            data='''
+            [
+                {'type': 'title', 'title': 'Math'},
+                {
+                'type': 'options',
+                'title': 'Logarithmic scale',
+                'desc': 'Turn on/off the logarithmic scale',
+                'section': 'Math',
+                'key': 'log_scale',
+                'options': ['OFF', 'X', 'Y', 'XY'],
+                },
             ]
             '''
         )

@@ -64,7 +64,7 @@
             pos_hint: {'top': 1}
             size_hint: None, None
             height: 120
-            width: 900
+            width: 1050
 
             HoverButton:
                 id: load_image_button
@@ -127,6 +127,16 @@
                 width: 100
                 border: 0, 0, 0, 0
 
+            HoverButton:
+                id: math_button
+                on_release: root.math_dropdown.open(self)
+                background_normal: 'images/math_icon_normal.png'
+                background_down: 'images/math_icon_down.png'
+                background_hovered: 'images/math_icon_down.png'
+                height: root.height
+                width: 100
+                border: 0, 0, 0, 0
+
             Widget:
                 size_hint: None, None
                 width: 10
@@ -154,7 +164,8 @@
                     border: 0, 0, 0, 0
 
                 Label:
-                    text: 'Show\npipeline'
+                    text:
+                        'Show\npipeline' if original_image_toggle.state == 'down' else 'Hide\npipeline'
                     size_hint_y: None
                     height: 40
                     halign: 'center'
