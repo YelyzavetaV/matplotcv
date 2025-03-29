@@ -77,7 +77,7 @@ class FileChooserContent(BoxLayout):
         self.file_chooser.path = kwargs.get('path', os.path.expanduser('~'))
 
 
-def open_nested_dropdown(dropdown, button):
+def open_nested_dropdown(dropdown, button, parent):
     '''
     Open a nested dropdown and align it with the parent at the bottom.
     '''
@@ -86,6 +86,8 @@ def open_nested_dropdown(dropdown, button):
     dropdown.pos = (
         pos[0] + button.width, pos[1] + button.height - dropdown.height
     )
+
+    dropdown.bind(on_dismiss=lambda i: parent.dismiss())
 
 
 class ToolsDropDown(DropDown):
@@ -214,8 +216,6 @@ class ContourWidget(Widget):
         return super().on_touch_down(touch)
 
     def on_label_selection(self, instance, value):
-        self.dropdown.dismiss()
-
         mpl_widget = App.get_running_app().mpl_widget
 
         match value:

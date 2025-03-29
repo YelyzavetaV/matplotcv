@@ -109,86 +109,96 @@ class Pipeline:
             self.contours = {}
 
     def resize(self, size: str):
-        self.clear('processed')
+        if not self.isempty:
+            self.clear('processed')
 
-        h, w = self.processed.shape[0], self.processed.shape[1]
-        aspect_ratio = w / h
+            h, w = self.processed.shape[0], self.processed.shape[1]
+            aspect_ratio = w / h
 
-        try:
-            target_width, target_height = sizes[size]
-        except KeyError as e:
-            raise ValueError(f'Size "{size}" not supported') from e
+            try:
+                target_width, target_height = sizes[size]
+            except KeyError as e:
+                raise ValueError(f'Size "{size}" not supported') from e
 
-        if w >= h:
-            target_height = int(target_width / aspect_ratio)
-        else:
-            target_width = int(target_height * aspect_ratio)
+            if w >= h:
+                target_height = int(target_width / aspect_ratio)
+            else:
+                target_width = int(target_height * aspect_ratio)
 
-        if target_width > w:
-            warnings.warn('Cannot increase the size of the image')
-            return
+            if target_width > w:
+                warnings.warn('Cannot increase the size of the image')
+                return
 
-        self._original = cv.resize(self.processed, (target_width, target_height))
-        self._processed = self._original.copy()
+            self._original = cv.resize(
+                self.processed, (target_width, target_height)
+            )
+            self._processed = self._original.copy()
 
     def gray(self):
         if not self.isempty and not self.isgray:
             self._processed = cv.cvtColor(self.processed, cv.COLOR_BGR2GRAY)
 
     def blur(self, kind: str = 'gaussian', n: int = 1):
-        match kind:
-            case 'gaussian':
-                k = 3 + 2 * n
-                self._processed = cv.GaussianBlur(self._processed, (k, k), 0)
-            case _:
-                raise ValueError('Bad blur function')
-        self.blurring += k
+        if not self.isempty:
+            match kind:
+                case 'gaussian':
+                    k = 3 + 2 * n
+                    self._processed = cv.GaussianBlur(
+                        self._processed, (k, k), 0
+                    )
+                case _:
+                    raise ValueError('Bad blur function')
+            self.blurring += k
 
     def edges(self, kind: str = 'canny'):
-        match kind:
-            case 'canny':
-                # Automatic thresholding based on median
-                sigma = 0.33
-                m = np.median(self._processed)
-                lower = int(max(0, (1.0 - sigma) * m))
-                upper = int(min(255, (1.0 + sigma) * m))
+        if not self.isempty:
+            match kind:
+                case 'canny':
+                    # Automatic thresholding based on median
+                    sigma = 0.33
+                    m = np.median(self._processed)
+                    lower = int(max(0, (1.0 - sigma) * m))
+                    upper = int(min(255, (1.0 + sigma) * m))
 
-                self._processed = cv.Canny(self._processed, lower, upper)
-            case _:
-                raise ValueError('Bad edge detection function')
+                    self._processed = cv.Canny(self._processed, lower, upper)
+                case _:
+                    raise ValueError('Bad edge detection function')
 
-        self.isedgy = True
+            self.isedgy = True
 
     def find_contours(self, external: bool = False, key: int | None = None):
-        if key is None:  # Search in the entire image
-            contours, _ = cv.findContours(
-                self._processed,
-                cv.RETR_EXTERNAL if external else cv.RETR_TREE,
-                cv.CHAIN_APPROX_SIMPLE,
-            )
-            self.contours = OrderedDict((i, Contour(c)) for i, c in enumerate(contours))
-        else:  # Search in the parent contour
-            self.contour_roi(key)
-            x, y, w, h = self.contours[key].roi
-            roi = self.processed[y : h, x : w]
+        if not self.isempty:
+            if key is None:  # Search in the entire image
+                contours, _ = cv.findContours(
+                    self._processed,
+                    cv.RETR_EXTERNAL if external else cv.RETR_TREE,
+                    cv.CHAIN_APPROX_SIMPLE,
+                )
+                self.contours = OrderedDict(
+                    (i, Contour(c)) for i, c in enumerate(contours)
+                )
+            else:  # Search in the parent contour
+                self.contour_roi(key)
+                x, y, w, h = self.contours[key].roi
+                roi = self.processed[y : h, x : w]
 
-            contours, _ = cv.findContours(
-                roi, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
-            )
-            for contour in contours:
-                # Translate contour to the original image coordinates
-                contour += np.array([x, y])
+                contours, _ = cv.findContours(
+                    roi, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+                )
+                for contour in contours:
+                    # Translate contour to the original image coordinates
+                    contour += np.array([x, y])
 
-                idx = [  # Check if the contour already exists
-                    i for i, c in self.contours.items()
-                    if np.array_equal(contour, c)
-                ]
-                if idx:
-                    self.contours[key].children.add(idx[0])
-                else:
-                    idx = max(self.contours) + 1
-                    self.contours[idx] = Contour(contour)
-                    self.contours[key].children.add(idx)
+                    idx = [  # Check if the contour already exists
+                        i for i, c in self.contours.items()
+                        if np.array_equal(contour, c)
+                    ]
+                    if idx:
+                        self.contours[key].children.add(idx[0])
+                    else:
+                        idx = max(self.contours) + 1
+                        self.contours[idx] = Contour(contour)
+                        self.contours[key].children.add(idx)
 
     def split_contour(self, key: int, epsilon: float = 5.0) -> list[int]:
         '''

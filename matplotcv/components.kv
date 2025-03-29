@@ -98,7 +98,8 @@
         halign: 'left'
         valign: 'middle'
         padding: (5, 0)
-        on_release: root.open_nested_dropdown(root.blur_dropdown, self)
+        on_release:
+            root.open_nested_dropdown(root.blur_dropdown, self, root)
 
     Button:
         text: 'Detect edges...'
@@ -109,7 +110,7 @@
         valign: 'middle'
         padding: (5, 0)
         on_release:
-            root.open_nested_dropdown(root.detect_edges_dropdown, self)
+            root.open_nested_dropdown(root.detect_edges_dropdown, self, root)
 
 <BlurDropDown@DropDown>:
     auto_width: False
@@ -176,7 +177,7 @@
         valign: 'middle'
         padding: (5, 0)
         on_release:
-            root.open_nested_dropdown(root.log_scale_dropdown, self)
+            root.open_nested_dropdown(root.log_scale_dropdown, self, root)
 
 <LogScaleDropDown@DropDown>:
     auto_width: False
