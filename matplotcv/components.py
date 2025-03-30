@@ -161,8 +161,9 @@ class ContourWidget(Widget):
             'Split': lambda i: mpl_widget.split_contour(self.key),
             'Clear': lambda i: mpl_widget.clear_contour(self.key),
             'Label as...': lambda i: self.dropdown.open_nested_dropdown(
-                self.dropdown.label_axis_dropdown, i
+                self.dropdown.label_axis_dropdown, i, self.dropdown
             ),
+            'Export...': lambda i: mpl_widget.export_contour(self.key),
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
@@ -222,7 +223,7 @@ class ContourWidget(Widget):
             case 'tick':
                 input_popup = Factory.TickInputPopup()
                 input_popup.on_submit = lambda v: mpl_widget.label_contour(
-                    self.key, coordinate=v,
+                    self.key, label=value, coordinate=v
                 )
                 input_popup.open()
             case _:

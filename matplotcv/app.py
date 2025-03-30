@@ -14,6 +14,7 @@ from components import (
     FileChooserContent, ToolsDropDown, MathDropDown, ContourWidget
 )
 from pipeline import Pipeline
+from metrics import affine_map
 
 kivy.require('2.3.0')
 Logger.setLevel(LOG_LEVELS['debug'])
@@ -95,10 +96,10 @@ class MPLWidget(Widget):
                 try:
                     self.clear()
 
-                    self.pipeline.load_image(selection[0])
-
-                    if self.pipeline.isempty:
-                        raise exceptions.ImageLoadError()
+                    try:
+                        self.pipeline.load_image(selection[0])
+                    except exceptions.PipelineError as e:
+                        raise e
 
                     self.update_image()
 
@@ -198,9 +199,9 @@ class MPLWidget(Widget):
         self, color='blue', redraw=False, contours: set[int] | None = None
     ):
         '''Draw OpenCV contours as widgets'''
-        if not self.pipeline.isempty:
-            p = self.pipeline
+        p = self.pipeline
 
+        if not p.isempty:
             if not p.isedgy:
                 p.edges()
             if not p.contours:
@@ -263,6 +264,17 @@ class MPLWidget(Widget):
         self.pipeline.contours.move_to_end(key, last=False)
 
         self.draw_contours(color='red', redraw=True, contours={key})
+
+    def export_contour(self, key: int):
+        ticks = []
+        for j, contour in self.pipeline.contours.items():
+            if not contour.label:
+                break
+            if contour.label == 'tick':
+                ticks.append(j)
+
+        if len(ticks) < 3:
+            raise RuntimeError('At least 3 ticks are required')
 
     def clear_contour(self, keys: set[int]):
         for key in list(keys):

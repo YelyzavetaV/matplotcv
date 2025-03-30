@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
+from exceptions import PipelineError
 from utils import standard_coordinate
 
 supported_exts = (
@@ -90,9 +91,11 @@ class Pipeline:
 
         image = cv.imread(filename)
 
-        if image is not None:
-            self._original = image
-            self._processed = image.copy()
+        if image is None:
+            raise PipelineError('Failed to load image')
+
+        self._original = image
+        self._processed = image.copy()
 
     def clear(self, which: str = 'all'):
         if not self.isempty:
