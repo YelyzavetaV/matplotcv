@@ -206,7 +206,7 @@ class MPLWidget(Widget):
 
             # Transformation matrix maps the image coordinates to the user
             # coordinates
-            self._transform_matrix = affine_map(ep, ek)
+            self._transform_matrix = affine_map(ek, ep)
 
         return self._transform_matrix
     #---------------------------
