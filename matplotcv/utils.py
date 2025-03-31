@@ -1,7 +1,6 @@
 import re
 import math
 
-
 coordinate_patterns = {
     'scientific': r'^[+-]?\d+(\.\d+)?([eE\^][+-]?\d+)?$',
 }

@@ -1,13 +1,36 @@
+<MessagePopup@Popup>:
+    title: ''
+    message: ''
+    auto_dismiss: False
+    size_hint: (0.3, 0.3)
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 10
+        padding: 10
+
+        Label:
+            text: root.message
+            halign: 'center'
+            valign: 'middle'
+            text_size: self.size
+
+        Button:
+            text: 'Dismiss'
+            size_hint_y: None
+            height: 50
+            on_release: root.dismiss()
+
 <FileChooserContent@Popup>:
-    file_chooser: file_chooser
+    finder_icon_view: finder_icon_view
     load_button: load_button
 
     BoxLayout:
         orientation: 'vertical'
 
         FileChooserIconView:
-            id: file_chooser
-            on_selection: root.load(file_chooser.selection)
+            id: finder_icon_view
+            on_selection: root.load(finder_icon_view.selection)
             icon_folder: 'images/folder_icon.png'
             icon_file: 'images/file_icon_3.png'
 
@@ -20,7 +43,7 @@
             Button:
                 id: load_button
                 text: 'Load'
-                on_press: root.load(file_chooser.selection)
+                on_press: root.load(finder_icon_view.selection)
 
             Button:
                 text: 'Cancel'

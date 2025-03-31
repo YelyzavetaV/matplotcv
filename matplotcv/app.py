@@ -1,4 +1,5 @@
 import cv2 as cv
+
 import kivy
 from kivy.factory import Factory
 from kivy.core.window import Window
@@ -9,9 +10,10 @@ from kivy.properties import ObjectProperty
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
+
 import exceptions
 from components import (
-    FileChooserContent, ToolsDropDown, MathDropDown, ContourWidget
+    ErrorPopup, FileChooserContent, ToolsDropDown, MathDropDown, ContourWidget
 )
 from pipeline import Pipeline
 from metrics import affine_map
@@ -37,8 +39,8 @@ class MPLWidget(Widget):
             on_resize=self.on_window_resize, mouse_pos=self.on_mouse_move
         )
 
-        self.reduce_dropdown = Factory.ResizeDropDown()
-        self.reduce_dropdown.bind(
+        self.resize_dropdown = Factory.ResizeDropDown()
+        self.resize_dropdown.bind(
             on_select=lambda i, v: self.pipeline.resize(v)
         )
 
@@ -62,6 +64,7 @@ class MPLWidget(Widget):
     # UI operations
     #---------------------------
     def on_window_resize(self, instance, w, h):
+        '''Redraw all contours that are currently displayed.'''
         if self.contours:
             Clock.unschedule(self.draw_contours)  # Prevent multiple calls
             Clock.schedule_once(
@@ -69,6 +72,7 @@ class MPLWidget(Widget):
             )
 
     def on_mouse_move(self, window, pos):
+        '''Highlight a contour when the mouse is over it.'''
         threshold = self.app.config.get(
             'Advanced', 'contour_collide_threshold'
         )
@@ -79,41 +83,36 @@ class MPLWidget(Widget):
             contour.hovered = contour.collide_point(*pos, threshold)
 
     def on_load_image_button_press(self):
+        self.file_chooser = Popup(title='Load Image')
+
         content = FileChooserContent(
             load=self.load_image_with_file_chooser,
-            cancel=self.dismiss_file_chooser,
+            cancel=self.file_chooser.dismiss,
         )
-        self.file_chooser = Popup(
-            content=content,
-            title='Load Image',
-            # background='',
-        )
+        self.file_chooser.content = content
+
         self.file_chooser.open()
 
     def load_image_with_file_chooser(self, selection):
         if selection:  # Try loading file once confirmed with load button
             if self.file_chooser.content.load_button.state == 'down':
+                self.clear()
+
                 try:
-                    self.clear()
+                    self.pipeline.load_image(selection[0])
+                except exceptions.PipelineError:
+                    error_popup = ErrorPopup()
+                    error_popup.message = 'Could not load image'
+                    error_popup.open()
 
-                    try:
-                        self.pipeline.load_image(selection[0])
-                    except exceptions.PipelineError as e:
-                        raise e
+                self.file_chooser.dismiss()
 
-                    self.update_image()
+                self.update_image()
 
-                    # Sync at 30 FPS
-                    Clock.schedule_interval(
-                        lambda interval: self.update_image(), 1 / 30
-                    )
-                except Exception as e:
-                    raise e
-                finally:
-                    self.dismiss_file_chooser()
-
-    def dismiss_file_chooser(self):
-        self.file_chooser.dismiss()
+                # Sync at 30 FPS
+                Clock.schedule_interval(
+                    lambda interval: self.update_image(), 1 / 30
+                )
 
     def on_original_image_toggle_press(self):
         if self.original_image_toggle.state == 'down':
@@ -242,17 +241,15 @@ class MPLWidget(Widget):
         )
 
     def label_contour(
-            self,
-            key: int,
-            label: str | None = None,
-            coordinate: str | None = None,
-        ):
+        self,
+        key: int,
+        label: str | None = None,
+        coordinate: str | None = None,
+    ):
         if key not in self.pipeline.contours:  # Shouldn't happen
             raise RuntimeError('Contour not found')
 
-        Logger.debug(
-            f'Labeling contour {key} as {label} at {coordinate}'
-        )
+        Logger.debug(f'Labeling contour {key} as {label} at {coordinate}')
 
         if label is not None:
             self.pipeline.contours[key].label = label
@@ -274,7 +271,11 @@ class MPLWidget(Widget):
                 ticks.append(j)
 
         if len(ticks) < 3:
-            raise RuntimeError('At least 3 ticks are required')
+            error_popup = ErrorPopup()
+            error_popup.message = (
+                'At least 3 ticks are required to export coordinates'
+            )
+            error_popup.open()
 
     def clear_contour(self, keys: set[int]):
         for key in list(keys):

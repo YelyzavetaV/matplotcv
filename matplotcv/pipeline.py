@@ -46,9 +46,7 @@ class Contour:
     def coordinate(self, value: str):
         try:
             x, y = value.split(',')
-            self._coordinate = (
-                standard_coordinate(x), standard_coordinate(y)
-            )
+            self._coordinate = (standard_coordinate(x), standard_coordinate(y))
         except Exception as e:
             raise ValueError(f'Invalid coordinate format: {value}') from e
 
@@ -183,7 +181,7 @@ class Pipeline:
             else:  # Search in the parent contour
                 self.contour_roi(key)
                 x, y, w, h = self.contours[key].roi
-                roi = self.processed[y : h, x : w]
+                roi = self.processed[y:h, x:w]
 
                 contours, _ = cv.findContours(
                     roi, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE

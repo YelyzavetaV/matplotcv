@@ -1,16 +1,19 @@
 import os.path
 import matplotlib.colors as colors
+
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
+from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.scatter import Scatter
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.graphics import Color, Line
 from kivy.properties import ObjectProperty, StringProperty
+
 from metrics import point_segment_distance
 
 Builder.load_file('components.kv')
@@ -31,7 +34,20 @@ class TransparentScatter(Scatter):
         return False
 
 
+class MessagePopup(Popup):
+    title = StringProperty('')
+    message = StringProperty('')
+
+
+class ErrorPopup(MessagePopup):
+
+    def on_kv_post(self, base_widget):
+        self.title = 'Something went wrong'
+        return super().on_kv_post(base_widget)
+
+
 class HoverButton(Button):
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -68,13 +84,15 @@ class HoverButton(Button):
 
 
 class FileChooserContent(BoxLayout):
-    file_chooser = ObjectProperty()
+    finder_icon_view = ObjectProperty()
     load = ObjectProperty()
     cancel = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file_chooser.path = kwargs.get('path', os.path.expanduser('~'))
+        self.finder_icon_view.path = kwargs.get(
+            'path', os.path.expanduser('~')
+        )
 
 
 def open_nested_dropdown(dropdown, button, parent):
@@ -158,12 +176,16 @@ class ContourWidget(Widget):
         # Delegate contour actions to MPLWidget
         mpl_widget = App.get_running_app().mpl_widget
         actions = {
-            'Split': lambda i: mpl_widget.split_contour(self.key),
-            'Clear': lambda i: mpl_widget.clear_contour(self.key),
-            'Label as...': lambda i: self.dropdown.open_nested_dropdown(
+            'Split':
+            lambda i: mpl_widget.split_contour(self.key),
+            'Clear':
+            lambda i: mpl_widget.clear_contour(self.key),
+            'Label as...':
+            lambda i: self.dropdown.open_nested_dropdown(
                 self.dropdown.label_axis_dropdown, i, self.dropdown
             ),
-            'Export...': lambda i: mpl_widget.export_contour(self.key),
+            'Export...':
+            lambda i: mpl_widget.export_contour(self.key),
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
