@@ -34,6 +34,21 @@ def affine_map(x: np.ndarray, y: np.ndarray) -> np.ndarray:
         T = [[a00, a01, b0]
              [a10, a11, b1]
              [0,     0,  1]].
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Source points, shape (2, n), where 2 stands for the number of
+        dimensions and n - for the number of points.
+    y : np.ndarray
+        Target points, shape (2, n).
+
+    Returns
+    -------
+    np.ndarray
+        Augmented affine transformation matrix T' defined as follows:
+            T' = [[a00, a01, b0]
+                  [a10, a11, b1].
     '''
     x = np.concatenate([x, np.ones([1, x.shape[1]])], axis=0)
     return solve(x.T, y.T).T

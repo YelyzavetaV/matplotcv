@@ -25,7 +25,7 @@ def standard_coordinate(coordinate: str):
                 coordinate = math.pow(
                     float(coordinate[0]), float(coordinate[1])
                 )
-
-            return coordinate
         case _:  # Shouldn't happen
             pass
+
+    return float(coordinate)

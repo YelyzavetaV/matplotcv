@@ -1,4 +1,6 @@
 import cv2 as cv
+import numpy as np
+import random
 
 import kivy
 from kivy.factory import Factory
@@ -28,12 +30,14 @@ class MPLWidget(Widget):
     scatter = ObjectProperty()
     image = ObjectProperty()
     original_image_toggle = ObjectProperty()
-    pipeline = Pipeline()
-    contours = {}
-    drawn_contours = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.pipeline = Pipeline()
+        self.contours = {}
+        self.drawn_contours = None
+        self._transform_matrix = None
 
         Window.bind(
             on_resize=self.on_window_resize, mouse_pos=self.on_mouse_move
@@ -176,10 +180,39 @@ class MPLWidget(Widget):
         self.clear_contour(self.contours.keys())
         self.image.texture = None
 
+    @property
+    def transform_matrix(self):
+        if self._transform_matrix is None:
+            ticks = []
+            for j, contour in self.pipeline.contours.items():
+                if not contour.label:
+                    break
+                if contour.label == 'tick':
+                    ticks.append(j)
+
+            if len(ticks) < 3:
+                error_popup = ErrorPopup()
+                error_popup.message = (
+                    'At least 3 ticks are required to export coordinates'
+                )
+                error_popup.open()
+                return
+
+            ek = [random.choice(self.contours[tick].points) for tick in ticks]
+            ek = np.array(ek).T
+            ep = np.array(
+                [self.pipeline.contours[tick].coordinate for tick in ticks]
+            ).T
+
+            # Transformation matrix maps the image coordinates to the user
+            # coordinates
+            self._transform_matrix = affine_map(ep, ek)
+
+        return self._transform_matrix
     #---------------------------
     # Contour operations
     #---------------------------
-    def map_contour(self, contour):
+    def map_cv_contour_to_image(self, contour: int | ContourWidget):
         '''Map OpenCV contour to widget coordinates.'''
         w, h = self.image.size
         x, y = self.image.pos
@@ -189,10 +222,18 @@ class MPLWidget(Widget):
             h / self.pipeline.original.shape[0],
         )
 
+        if isinstance(contour, int):
+            contour = self.pipeline.contours.get(contour)
+
         return [
             (x + p[0][0] * scale[0], y + h - p[0][1] * scale[1])
             for p in contour.points
         ]
+
+    def map_image_contour_to_user(self, key: int):
+        x = np.array(self.contours[key].points).T
+        x = np.concatenate([x, np.ones([1, x.shape[1]])], axis=0)
+        return self.transform_matrix @ x
 
     def draw_contours(
         self, color='blue', redraw=False, contours: set[int] | None = None
@@ -214,7 +255,7 @@ class MPLWidget(Widget):
             for k in p.contours:
                 if k not in self.contours:
                     contour = ContourWidget(
-                        k, self.map_contour(p.contours[k]), color
+                        k, self.map_cv_contour_to_image(p.contours[k]), color
                     )
                     self.image.add_widget(contour)
                     self.contours[k] = contour
@@ -223,8 +264,8 @@ class MPLWidget(Widget):
         if old in self.contours:
             self.clear_contour({old})
 
-            for k, c in new.items():
-                contour = ContourWidget(k, self.map_contour(c))
+            for k in new:
+                contour = ContourWidget(k, self.map_cv_contour_to_image(k))
                 self.image.add_widget(contour)
                 self.contours[k] = contour
 
@@ -263,19 +304,8 @@ class MPLWidget(Widget):
         self.draw_contours(color='red', redraw=True, contours={key})
 
     def export_contour(self, key: int):
-        ticks = []
-        for j, contour in self.pipeline.contours.items():
-            if not contour.label:
-                break
-            if contour.label == 'tick':
-                ticks.append(j)
-
-        if len(ticks) < 3:
-            error_popup = ErrorPopup()
-            error_popup.message = (
-                'At least 3 ticks are required to export coordinates'
-            )
-            error_popup.open()
+        x = self.map_image_contour_to_user(key)
+        print(x[:, :10])
 
     def clear_contour(self, keys: set[int]):
         for key in list(keys):
