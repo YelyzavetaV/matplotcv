@@ -7,7 +7,6 @@ from kivy.factory import Factory
 from kivy.core.window import Window
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
 from kivy.graphics.texture import Texture
 from kivy.clock import Clock
@@ -15,7 +14,12 @@ from kivy.logger import Logger, LOG_LEVELS
 
 import exceptions
 from components import (
-    ErrorPopup, FileChooserContent, ToolsDropDown, MathDropDown, ContourWidget
+    ErrorPopup,
+    FileLoadPopup,
+    FileSavePopup,
+    ToolsDropDown,
+    MathDropDown,
+    ContourWidget,
 )
 from pipeline import Pipeline
 from metrics import affine_map
@@ -36,12 +40,20 @@ class MPLWidget(Widget):
 
         self.pipeline = Pipeline()
         self.contours = {}
+        self.marked_contours = set()
         self.drawn_contours = None
         self._transform_matrix = None
 
+        # Initialize and bind components
         Window.bind(
             on_resize=self.on_window_resize, mouse_pos=self.on_mouse_move
         )
+
+        self.file_loader = FileLoadPopup()
+        self.file_loader.load = self.load_image_from_file
+
+        self.file_saver = FileSavePopup()
+        self.file_saver.save = self.export_contour_to_file
 
         self.resize_dropdown = Factory.ResizeDropDown()
         self.resize_dropdown.bind(
@@ -86,20 +98,9 @@ class MPLWidget(Widget):
         for contour in self.contours.values():
             contour.hovered = contour.collide_point(*pos, threshold)
 
-    def on_load_image_button_press(self):
-        self.file_chooser = Popup(title='Load Image')
-
-        content = FileChooserContent(
-            load=self.load_image_with_file_chooser,
-            cancel=self.file_chooser.dismiss,
-        )
-        self.file_chooser.content = content
-
-        self.file_chooser.open()
-
-    def load_image_with_file_chooser(self, selection):
+    def load_image_from_file(self, selection):
         if selection:  # Try loading file once confirmed with load button
-            if self.file_chooser.content.load_button.state == 'down':
+            if self.file_loader.load_button.state == 'down':
                 self.clear()
 
                 try:
@@ -109,7 +110,7 @@ class MPLWidget(Widget):
                     error_popup.message = 'Could not load image'
                     error_popup.open()
 
-                self.file_chooser.dismiss()
+                self.file_loader.dismiss()
 
                 self.update_image()
 
@@ -193,7 +194,8 @@ class MPLWidget(Widget):
             if len(ticks) < 3:
                 error_popup = ErrorPopup()
                 error_popup.message = (
-                    'At least 3 ticks are required to export coordinates'
+                    'At least 3 ticks are required to construct '
+                    'transform matrix'
                 )
                 error_popup.open()
                 return
@@ -303,9 +305,13 @@ class MPLWidget(Widget):
 
         self.draw_contours(color='red', redraw=True, contours={key})
 
-    def export_contour(self, key: int):
-        x = self.map_image_contour_to_user(key)
-        print(x[:, :10])
+    def export_contour_to_file(self, dir: str, name: str):
+        # x = self.map_image_contour_to_user(key)
+        # print(x[:, :10])
+
+        Logger.debug(f'Exporting contours {self.marked_contours}')
+
+        self.marked_contours.clear()
 
     def clear_contour(self, keys: set[int]):
         for key in list(keys):
@@ -320,8 +326,8 @@ class MPLApp(App):
         Window.minimum_width = self.config.getint('Graphics', 'min_width')
         Window.minimum_height = self.config.getint('Graphics', 'min_height')
 
-        self.mpl_widget = MPLWidget(app=self)
-        return self.mpl_widget
+        self.root_widget = MPLWidget(app=self)
+        return self.root_widget
 
     def build_config(self, config):
         config.adddefaultsection('Math')

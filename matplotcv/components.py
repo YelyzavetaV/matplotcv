@@ -9,7 +9,6 @@ from kivy.uix.widget import Widget
 from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.scatter import Scatter
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.graphics import Color, Line
 from kivy.properties import ObjectProperty, StringProperty
@@ -83,16 +82,22 @@ class HoverButton(Button):
         self.background_normal = self._background_normal
 
 
-class FileChooserContent(BoxLayout):
-    finder_icon_view = ObjectProperty()
-    load = ObjectProperty()
-    cancel = ObjectProperty()
+class FinderPopup(Popup):
+    icon_view = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.finder_icon_view.path = kwargs.get(
+        self.icon_view.path = kwargs.get(
             'path', os.path.expanduser('~')
         )
+
+
+class FileLoadPopup(FinderPopup):
+    load = ObjectProperty()
+
+
+class FileSavePopup(FinderPopup):
+    save = ObjectProperty()
 
 
 def open_nested_dropdown(dropdown, button, parent):
@@ -159,7 +164,10 @@ class ContourDropDown(DropDown):
 
 
 class ContourWidget(Widget):
-    '''Handles interactable contours.'''
+    '''
+    Handles the logic of interactable contours. Stores the unique key
+    of the contour to identify it in the pipeline.
+    '''
 
     def __init__(self, key, points, color='blue', **kwargs):
         super().__init__(**kwargs)
@@ -171,29 +179,30 @@ class ContourWidget(Widget):
 
         self.update(points)
 
-        self.dropdown = ContourDropDown()
+        self.contour_dropdown = ContourDropDown()
 
         # Delegate contour actions to MPLWidget
-        mpl_widget = App.get_running_app().mpl_widget
+        root_widget = App.get_running_app().root_widget
         actions = {
             'Split':
-            lambda i: mpl_widget.split_contour(self.key),
+            lambda instance: root_widget.split_contour(self.key),
             'Clear':
-            lambda i: mpl_widget.clear_contour(self.key),
+            lambda instance: root_widget.clear_contour(self.key),
             'Label as...':
-            lambda i: self.dropdown.open_nested_dropdown(
-                self.dropdown.label_axis_dropdown, i, self.dropdown
+            lambda instance: self.contour_dropdown.open_nested_dropdown(
+                self.contour_dropdown.label_axis_dropdown,
+                instance,
+                self.contour_dropdown,
             ),
-            'Export...':
-            lambda i: mpl_widget.export_contour(self.key),
+            'Export...': self.on_export_button_press,
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
             button.bind(on_press=callback)
-            self.dropdown.add_widget(button)
+            self.contour_dropdown.add_widget(button)
 
-        self.dropdown.label_axis_dropdown.bind(
-            on_select=self.on_label_selection
+        self.contour_dropdown.label_axis_dropdown.bind(
+            on_select=self.on_label_button_press
         )
 
     @property
@@ -233,20 +242,26 @@ class ContourWidget(Widget):
 
     def on_touch_down(self, touch):
         if touch.button == 'left' and self.collide_point(*touch.pos):
-            self.dropdown.open(self)
-            self.dropdown.pos = touch.pos
+            self.contour_dropdown.open(self)
+            self.contour_dropdown.pos = touch.pos
             return True
         return super().on_touch_down(touch)
 
-    def on_label_selection(self, instance, value):
-        mpl_widget = App.get_running_app().mpl_widget
+    def on_label_button_press(self, instance, value):
+        root_widget = App.get_running_app().root_widget
 
         match value:
             case 'tick':
                 input_popup = Factory.TickInputPopup()
-                input_popup.on_submit = lambda v: mpl_widget.label_contour(
+                input_popup.on_submit = lambda v: root_widget.label_contour(
                     self.key, label=value, coordinate=v
                 )
                 input_popup.open()
             case _:
-                mpl_widget.label_contour(self.key, label=value)
+                root_widget.label_contour(self.key, label=value)
+
+    def on_export_button_press(self, instance):
+        root_widget = App.get_running_app().root_widget
+        root_widget.marked_contours.add(self.key)
+
+        root_widget.file_saver.open()

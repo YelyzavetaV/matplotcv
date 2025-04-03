@@ -21,21 +21,22 @@
             height: 50
             on_release: root.dismiss()
 
-<FileChooserContent@Popup>:
-    finder_icon_view: finder_icon_view
+<FileLoadPopup@FinderPopup>:
+    icon_view: icon_view
     load_button: load_button
+    size_hint: (0.8, 0.8)
 
     BoxLayout:
         orientation: 'vertical'
 
         FileChooserIconView:
-            id: finder_icon_view
-            on_selection: root.load(finder_icon_view.selection)
+            id: icon_view
+            # filters: ['.*\.(png|PNG|jpg|JPG|jpeg|JPEG)$']
+            on_selection: root.load(icon_view.selection)
             icon_folder: 'images/folder_icon.png'
             icon_file: 'images/file_icon_3.png'
 
         BoxLayout:
-            height: 15
             size_hint: 0.4, 0.1
             spacing: 50
             pos_hint: {'center_x': 0.5}
@@ -43,11 +44,45 @@
             Button:
                 id: load_button
                 text: 'Load'
-                on_press: root.load(finder_icon_view.selection)
+                on_press: root.load(icon_view.selection)
 
             Button:
                 text: 'Cancel'
-                on_press: root.cancel()
+                on_press: root.dismiss()
+
+<FileSavePopup@FinderPopup>:
+    icon_view: icon_view
+    # load_button: load_button
+    size_hint: (0.8, 0.8)
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 10
+        padding: 10
+
+        TextInput:
+            id: file_input_field
+            hint_text: 'Enter file name'
+            multiline: False
+            size_hint: (1, 0.08)
+            pos_hint: {'center_x': 0.5}
+
+        FileChooserIconView:
+            id: icon_view
+
+        BoxLayout:
+            size_hint: (0.4, 0.1)
+            spacing: 50
+            pos_hint: {'center_x': 0.5}
+
+            Button:
+                text: 'Create'
+                on_press:
+                    root.save(icon_view.path, file_input_field.text)
+
+            Button:
+                text: 'Cancel'
+                on_press: root.dismiss()
 
 <TickInputPopup@Popup>
     title: 'Enter coordinate'
@@ -75,7 +110,6 @@
             Button:
                 text: 'Cancel'
                 on_release: root.dismiss()
-
 
 <ResizeDropDown@DropDown>:
     auto_width: False
