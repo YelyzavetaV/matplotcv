@@ -1,3 +1,5 @@
+import os
+import csv
 import cv2 as cv
 import numpy as np
 import random
@@ -306,10 +308,20 @@ class MPLWidget(Widget):
         self.draw_contours(color='red', redraw=True, contours={key})
 
     def export_contour_to_file(self, dir: str, name: str):
-        # x = self.map_image_contour_to_user(key)
-        # print(x[:, :10])
+        path = os.path.join(dir, name)
 
-        Logger.debug(f'Exporting contours {self.marked_contours}')
+        if not path.endswith('.csv'):
+            path += '.csv'
+
+        with open(path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['x', 'y'])
+
+            for key in self.marked_contours:
+                Logger.debug(f'Exporting contour {key}')
+
+                points = self.map_image_contour_to_user(key)
+                writer.writerows(points.T)
 
         self.marked_contours.clear()
 

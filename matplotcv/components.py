@@ -113,6 +113,27 @@ def open_nested_dropdown(dropdown, button, parent):
     dropdown.bind(on_dismiss=lambda i: parent.dismiss())
 
 
+class BaseDropDown(DropDown):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def open(self, widget, pos):
+        super().open(widget)
+
+        x, y = pos
+
+        if x + self.width > Window.width:
+            x = Window.width - self.width
+
+        if y < 0:
+            y = 0
+        if y + self.height > Window.height:
+            y = Window.height - self.height
+
+        self.pos = (x, y)
+
+
 class ToolsDropDown(DropDown):
     blur_dropdown = ObjectProperty()
     detect_edges_dropdown = ObjectProperty()
@@ -154,7 +175,7 @@ class LogScaleDropDown(DropDown):
         app.config.write()
 
 
-class ContourDropDown(DropDown):
+class ContourDropDown(BaseDropDown):
     label_axis_dropdown = ObjectProperty()
     open_nested_dropdown = staticmethod(open_nested_dropdown)
 
@@ -172,7 +193,6 @@ class ContourWidget(Widget):
     def __init__(self, key, points, color='blue', **kwargs):
         super().__init__(**kwargs)
 
-        self.selected = False
         self._hovered = False
         self.key = key
         self.color = colors.to_rgba(color)
@@ -242,8 +262,7 @@ class ContourWidget(Widget):
 
     def on_touch_down(self, touch):
         if touch.button == 'left' and self.collide_point(*touch.pos):
-            self.contour_dropdown.open(self)
-            self.contour_dropdown.pos = touch.pos
+            self.contour_dropdown.open(self, touch.pos)
             return True
         return super().on_touch_down(touch)
 

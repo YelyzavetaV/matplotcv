@@ -79,6 +79,7 @@
                 text: 'Create'
                 on_press:
                     root.save(icon_view.path, file_input_field.text)
+                on_release: root.dismiss()
 
             Button:
                 text: 'Cancel'
@@ -284,7 +285,7 @@
         on_press: root.select('XY')
         on_release: root.dismiss()
 
-<ContourDropDown@DropDown>:
+<ContourDropDown@BaseDropDown>:
     auto_width: False
     width: 200
 
