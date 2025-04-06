@@ -21,6 +21,38 @@
             height: 50
             on_release: root.dismiss()
 
+<ConfirmationPopup@Popup>:
+    title: 'Confirm or cancel'
+    message: ''
+    auto_dismiss: False
+    size_hint: (0.3, 0.3)
+
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 10
+        padding: 10
+
+        Label:
+            text: root.message
+            halign: 'center'
+            valign: 'middle'
+            text_size: self.size
+
+        BoxLayout:
+            size_hint: 0.4, 0.1
+            spacing: 50
+            pos_hint: {'center_x': 0.5}
+
+            Button:
+                text: 'Confirm'
+                on_press: root.confirm()
+                on_release: root.dismiss()
+
+            Button:
+                text: 'Cancel'
+                on_press: root.dismiss()
+
+
 <FileLoadPopup@FinderPopup>:
     icon_view: icon_view
     load_button: load_button
@@ -76,7 +108,7 @@
             pos_hint: {'center_x': 0.5}
 
             Button:
-                text: 'Create'
+                text: 'Save'
                 on_press:
                     root.save(icon_view.path, file_input_field.text)
                 on_release: root.dismiss()

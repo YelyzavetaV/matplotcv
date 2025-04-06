@@ -17,6 +17,7 @@ from kivy.logger import Logger, LOG_LEVELS
 import exceptions
 from components import (
     ErrorPopup,
+    ConfirmationPopup,
     FileLoadPopup,
     FileSavePopup,
     ToolsDropDown,
@@ -52,10 +53,10 @@ class MPLWidget(Widget):
         )
 
         self.file_loader = FileLoadPopup()
-        self.file_loader.load = self.load_image_from_file
+        self.file_loader.load = self.on_load_from_file_button_press
 
         self.file_saver = FileSavePopup()
-        self.file_saver.save = self.export_contour_to_file
+        self.file_saver.save = self.on_save_to_file_button_press
 
         self.resize_dropdown = Factory.ResizeDropDown()
         self.resize_dropdown.bind(
@@ -100,7 +101,7 @@ class MPLWidget(Widget):
         for contour in self.contours.values():
             contour.hovered = contour.collide_point(*pos, threshold)
 
-    def load_image_from_file(self, selection):
+    def on_load_from_file_button_press(self, selection):
         if selection:  # Try loading file once confirmed with load button
             if self.file_loader.load_button.state == 'down':
                 self.clear()
@@ -120,6 +121,22 @@ class MPLWidget(Widget):
                 Clock.schedule_interval(
                     lambda interval: self.update_image(), 1 / 30
                 )
+
+    def on_save_to_file_button_press(self, dir: str, name: str):
+        path = os.path.join(dir, name)
+
+        if not path.endswith('.csv'):
+            path += '.csv'
+
+        if os.path.exists(path):
+            confirmation_popup = ConfirmationPopup()
+
+            confirmation_popup.message = (
+                'File already exists. Do you want to overwrite it?'
+            )
+            confirmation_popup.confirm = lambda: self.write_contour(path)
+
+            confirmation_popup.open()
 
     def on_original_image_toggle_press(self):
         if self.original_image_toggle.state == 'down':
@@ -182,6 +199,7 @@ class MPLWidget(Widget):
         self.pipeline.clear('all')
         self.clear_contour(self.contours.keys())
         self.image.texture = None
+        self._transform_matrix = None
 
     @property
     def transform_matrix(self):
@@ -213,6 +231,7 @@ class MPLWidget(Widget):
             self._transform_matrix = affine_map(ek, ep)
 
         return self._transform_matrix
+
     #---------------------------
     # Contour operations
     #---------------------------
@@ -307,13 +326,8 @@ class MPLWidget(Widget):
 
         self.draw_contours(color='red', redraw=True, contours={key})
 
-    def export_contour_to_file(self, dir: str, name: str):
-        path = os.path.join(dir, name)
-
-        if not path.endswith('.csv'):
-            path += '.csv'
-
-        with open(path, 'w', newline='') as f:
+    def write_contour(self, filename: str):
+        with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['x', 'y'])
 
@@ -329,6 +343,7 @@ class MPLWidget(Widget):
         for key in list(keys):
             self.image.remove_widget(self.contours[key])
             self.contours.pop(key)
+            self.marked_contours.discard(key)
 
 
 class MPLApp(App):

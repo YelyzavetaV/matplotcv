@@ -45,6 +45,27 @@ class ErrorPopup(MessagePopup):
         return super().on_kv_post(base_widget)
 
 
+class ConfirmationPopup(Popup):
+    message = StringProperty('')
+    confirm = ObjectProperty()
+
+
+class FinderPopup(Popup):
+    icon_view = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.icon_view.path = kwargs.get('path', os.path.expanduser('~'))
+
+
+class FileLoadPopup(FinderPopup):
+    load = ObjectProperty()
+
+
+class FileSavePopup(FinderPopup):
+    save = ObjectProperty()
+
+
 class HoverButton(Button):
 
     def __init__(self, **kwargs):
@@ -80,24 +101,6 @@ class HoverButton(Button):
     def on_leave(self):
         self._hovered = False
         self.background_normal = self._background_normal
-
-
-class FinderPopup(Popup):
-    icon_view = ObjectProperty()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.icon_view.path = kwargs.get(
-            'path', os.path.expanduser('~')
-        )
-
-
-class FileLoadPopup(FinderPopup):
-    load = ObjectProperty()
-
-
-class FileSavePopup(FinderPopup):
-    save = ObjectProperty()
 
 
 def open_nested_dropdown(dropdown, button, parent):
@@ -214,11 +217,15 @@ class ContourWidget(Widget):
                 instance,
                 self.contour_dropdown,
             ),
-            'Export...': self.on_export_button_press,
+            'Export...':
+            self.on_export_button_press,
         }
         for action, callback in actions.items():
             button = Button(text=action, height=50, size_hint_y=None)
+
             button.bind(on_press=callback)
+            button.bind(on_release=self.contour_dropdown.dismiss)
+
             self.contour_dropdown.add_widget(button)
 
         self.contour_dropdown.label_axis_dropdown.bind(
