@@ -232,10 +232,10 @@
 
 <DrawDropDown@DropDown>:
     auto_width: False
-    width: 200
+    width: 245
 
     Button:
-        text: 'Draw all'
+        text: 'Draw all contours'
         height: 50
         size_hint_y: None
         text_size: self.size
@@ -244,15 +244,15 @@
         padding: (5, 0)
         on_release: root.select('blue')
 
-    Button:
-        text: 'Draw outer'
-        height: 50
-        size_hint_y: None
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (5, 0)
-        on_release: root.select('blue')
+    # Button:
+    #     text: 'Draw outer'
+    #     height: 50
+    #     size_hint_y: None
+    #     text_size: self.size
+    #     halign: 'left'
+    #     valign: 'middle'
+    #     padding: (5, 0)
+    #     on_release: root.select('blue')
 
 <MathDropDown@DropDown>:
     auto_width: False

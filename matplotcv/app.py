@@ -157,9 +157,9 @@ class MPLWidget(Widget):
         aspect = self.pipeline.aspect
 
         if w / h > aspect:
-            self.image.size = (h * aspect, h)
+            self.image.size = (0.75 * h * aspect, 0.75 * h)
         else:
-            self.image.size = (w, w / aspect)
+            self.image.size = (0.75 * w, 0.75 * w / aspect)
 
     def update_image(self):
         if not self.pipeline.isempty:

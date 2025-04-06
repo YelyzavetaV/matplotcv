@@ -55,19 +55,12 @@ class Contour:
 
 class Pipeline:
     '''Pipeline controls all OpenCV computations.'''
-    _processed = None
-    _original = None
-    isedgy = False
-    blurring = 0
-    contours = {}
 
-    @property
-    def processed(self):
-        return self._processed
-
-    @property
-    def original(self):
-        return self._original
+    def __init__(self):
+        self.processed = self.original = None
+        self.isedgy = False
+        self.blurring = 0
+        self.contours = {}
 
     @property
     def isempty(self):
@@ -92,16 +85,16 @@ class Pipeline:
         if image is None:
             raise PipelineError('Failed to load image')
 
-        self._original = image
-        self._processed = image.copy()
+        self.original = image
+        self.processed = image.copy()
 
     def clear(self, which: str = 'all'):
         if not self.isempty:
             match which:
                 case 'all':
-                    self._processed = self._original = None
+                    self.processed = self.original = None
                 case 'processed':
-                    self._processed = self._original.copy()
+                    self.processed = self.original.copy()
                 case _:
                     raise ValueError('Bad clear option')
 
@@ -130,22 +123,22 @@ class Pipeline:
                 warnings.warn('Cannot increase the size of the image')
                 return
 
-            self._original = cv.resize(
+            self.original = cv.resize(
                 self.processed, (target_width, target_height)
             )
-            self._processed = self._original.copy()
+            self.processed = self.original.copy()
 
     def gray(self):
         if not self.isempty and not self.isgray:
-            self._processed = cv.cvtColor(self.processed, cv.COLOR_BGR2GRAY)
+            self.processed = cv.cvtColor(self.processed, cv.COLOR_BGR2GRAY)
 
     def blur(self, kind: str = 'gaussian', n: int = 1):
         if not self.isempty:
             match kind:
                 case 'gaussian':
                     k = 3 + 2 * n
-                    self._processed = cv.GaussianBlur(
-                        self._processed, (k, k), 0
+                    self.processed = cv.GaussianBlur(
+                        self.processed, (k, k), 0
                     )
                 case _:
                     raise ValueError('Bad blur function')
@@ -157,11 +150,11 @@ class Pipeline:
                 case 'canny':
                     # Automatic thresholding based on median
                     sigma = 0.33
-                    m = np.median(self._processed)
+                    m = np.median(self.processed)
                     lower = int(max(0, (1.0 - sigma) * m))
                     upper = int(min(255, (1.0 + sigma) * m))
 
-                    self._processed = cv.Canny(self._processed, lower, upper)
+                    self.processed = cv.Canny(self.processed, lower, upper)
                 case _:
                     raise ValueError('Bad edge detection function')
 
@@ -171,7 +164,7 @@ class Pipeline:
         if not self.isempty:
             if key is None:  # Search in the entire image
                 contours, _ = cv.findContours(
-                    self._processed,
+                    self.processed,
                     cv.RETR_EXTERNAL if external else cv.RETR_TREE,
                     cv.CHAIN_APPROX_SIMPLE,
                 )

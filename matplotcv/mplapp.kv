@@ -21,15 +21,14 @@
         TransparentScatter:
             id: scatter
             size_hint: None, None
-            size: root.width, root.height - 150
+            width: self.parent.width
+            height: self.parent.height
             do_rotation: False
             do_translation: False
             do_scale: False
 
             Image:
                 id: image
-                size_hint: None, None
-                size: self.parent.size
                 allow_stretch: True
                 keep_ratio: True
 
