@@ -14,7 +14,7 @@ from kivy.graphics.texture import Texture
 from kivy.clock import Clock
 from kivy.logger import Logger, LOG_LEVELS
 
-import exceptions
+from exceptions import PipelineError
 from components import (
     ErrorPopup,
     ConfirmationPopup,
@@ -64,6 +64,9 @@ class MPLWidget(Widget):
         )
 
         self.tools_dropdown = ToolsDropDown()
+        self.tools_dropdown.bind(
+            on_select=lambda i, v: self.pipeline.process()
+        )
         self.tools_dropdown.bind(on_select=lambda i, v: self.pipeline.gray())
         self.tools_dropdown.blur_dropdown.bind(
             on_select=lambda i, v: self.pipeline.blur(v)
@@ -108,7 +111,7 @@ class MPLWidget(Widget):
 
                 try:
                     self.pipeline.load_image(selection[0])
-                except exceptions.PipelineError:
+                except PipelineError:
                     error_popup = ErrorPopup()
                     error_popup.message = 'Could not load image'
                     error_popup.open()
@@ -153,6 +156,7 @@ class MPLWidget(Widget):
     # Image operations
     #---------------------------
     def resize_image(self):
+        '''Dynamically resize the image to fit 0.75 of the window.'''
         w, h = self.size
         aspect = self.pipeline.aspect
 
@@ -259,7 +263,10 @@ class MPLWidget(Widget):
         return self.transform_matrix @ x
 
     def draw_contours(
-        self, color='blue', redraw=False, contours: set[int] | None = None
+        self,
+        color: str = 'blue',
+        redraw: bool = False,
+        contours: set[int] | None = None
     ):
         '''Draw OpenCV contours as widgets'''
         p = self.pipeline

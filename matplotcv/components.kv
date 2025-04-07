@@ -171,6 +171,16 @@
     width: 275
 
     Button:
+        text: 'Default pipeline'
+        height: 50
+        size_hint_y: None
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (5, 0)
+        on_release: root.select('default')
+
+    Button:
         text: 'Gray scale'
         height: 50
         size_hint_y: None

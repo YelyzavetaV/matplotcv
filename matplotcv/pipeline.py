@@ -4,7 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 import numpy as np
 import cv2 as cv
-from exceptions import PipelineError
+from exceptions import PipelineError, pipeline_error_handler
 from utils import standard_coordinate
 
 supported_exts = (
@@ -56,8 +56,8 @@ class Contour:
 class Pipeline:
     '''Pipeline controls all OpenCV computations.'''
 
-    def __init__(self):
-        self.processed = self.original = None
+    def __init__(self, image: np.ndarray | None = None):
+        self.processed = self.original = image
         self.isedgy = False
         self.blurring = 0
         self.contours = {}
@@ -80,13 +80,22 @@ class Pipeline:
         if ext.lower() not in supported_exts:
             raise ValueError(f'Unsupported file extension {ext}')
 
-        image = cv.imread(filename)
+        self.original = cv.imread(filename)
+        self.processed = self.original.copy()
 
-        if image is None:
-            raise PipelineError('Failed to load image')
+        if self.isempty:
+            raise PipelineError('Could not load image')
 
-        self.original = image
-        self.processed = image.copy()
+    @pipeline_error_handler
+    def process(self, filename: str | None = None):
+        if filename is not None:
+            self.clear()
+            self.load_image(filename)
+
+        self.resize('hd')
+        self.gray()
+        self.blur(strength=0.01)
+        self.edges()
 
     def clear(self, which: str = 'all'):
         if not self.isempty:
@@ -132,14 +141,32 @@ class Pipeline:
         if not self.isempty and not self.isgray:
             self.processed = cv.cvtColor(self.processed, cv.COLOR_BGR2GRAY)
 
-    def blur(self, kind: str = 'gaussian', n: int = 1):
+    def blur(
+        self,
+        kind: str = 'gaussian',
+        n: int | None = None,
+        strength: float = 0.01,
+    ):
         if not self.isempty:
+            if (
+                not isinstance(n, int)
+                and not isinstance(strength, (int, float))
+            ):
+                raise ValueError('Either n or strength must be provided')
+
             match kind:
                 case 'gaussian':
-                    k = 3 + 2 * n
-                    self.processed = cv.GaussianBlur(
-                        self.processed, (k, k), 0
-                    )
+                    if n is not None:
+                        k = 3 + 2 * (n - 1)
+                    else:
+                        k = max(
+                            3,
+                            int(
+                                strength * min(self.processed.shape[:2])
+                            ) // 2 * 2 + 1
+                        )
+
+                    self.processed = cv.GaussianBlur(self.processed, (k, k), 0)
                 case _:
                     raise ValueError('Bad blur function')
             self.blurring += k
