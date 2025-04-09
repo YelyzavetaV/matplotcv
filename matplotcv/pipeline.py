@@ -75,6 +75,13 @@ class Pipeline:
         if not self.isempty:
             return self.original.shape[1] / self.original.shape[0]
 
+    def kernel_size(self, s: float = 0.01):
+        if not self.isempty:
+            return max(
+                3,
+                int(s * min(self.processed.shape[:2])) // 2 * 2 + 1
+            )
+
     def load_image(self, filename: str):
         _, ext = os.path.splitext(filename)
         if ext.lower() not in supported_exts:
@@ -157,19 +164,16 @@ class Pipeline:
             match kind:
                 case 'gaussian':
                     if n is not None:
-                        k = 3 + 2 * (n - 1)
+                        kernel_size = 3 + 2 * (n - 1)
                     else:
-                        k = max(
-                            3,
-                            int(
-                                strength * min(self.processed.shape[:2])
-                            ) // 2 * 2 + 1
-                        )
+                        kernel_size = self.kernel_size(strength)
 
-                    self.processed = cv.GaussianBlur(self.processed, (k, k), 0)
+                    self.processed = cv.GaussianBlur(
+                        self.processed, (kernel_size, kernel_size), 0
+                    )
                 case _:
                     raise ValueError('Bad blur function')
-            self.blurring += k
+            self.blurring += kernel_size
 
     def edges(self, kind: str = 'canny'):
         if not self.isempty:

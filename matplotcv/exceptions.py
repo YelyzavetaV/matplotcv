@@ -10,6 +10,7 @@ class PipelineError(Exception):
 
 
 def pipeline_error_handler(func):
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
@@ -18,4 +19,5 @@ def pipeline_error_handler(func):
             error_popup = ErrorPopup()
             error_popup.message = str(e)
             error_popup.open()
+
     return wrapper

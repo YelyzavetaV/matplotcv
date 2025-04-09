@@ -2,7 +2,6 @@ import os
 import csv
 import cv2 as cv
 import numpy as np
-import random
 
 import kivy
 from kivy.factory import Factory
@@ -45,7 +44,7 @@ class MPLWidget(Widget):
         self.contours = {}
         self.marked_contours = set()
         self.drawn_contours = None
-        self._transform_matrix = None
+        self.transform_matrix = None
 
         # Initialize and bind components
         Window.bind(
@@ -140,6 +139,8 @@ class MPLWidget(Widget):
             confirmation_popup.confirm = lambda: self.write_contour(path)
 
             confirmation_popup.open()
+        else:
+            self.write_contour(path)
 
     def on_original_image_toggle_press(self):
         if self.original_image_toggle.state == 'down':
@@ -199,42 +200,42 @@ class MPLWidget(Widget):
     def zoom(self, factor):
         self.scatter.scale *= factor
 
+    def update_transform_matrix(self):
+        ticks = []
+        for j, contour in self.pipeline.contours.items():
+            if not contour.label:
+                break
+            if contour.label == 'tick':
+                ticks.append(j)
+
+        if len(ticks) < 3:
+            error_popup = ErrorPopup()
+            error_popup.message = (
+                'At least 3 ticks are required to construct '
+                'transform matrix'
+            )
+            error_popup.open()
+            return
+
+        ek = np.array(
+            [self.pipeline.contours[j].points[1][0] for j in ticks]
+        ).T
+
+        ep = np.array(
+            [self.pipeline.contours[tick].coordinate for tick in ticks]
+        ).T
+
+        # Transformation matrix maps the image coordinates to the user
+        # coordinates
+        self.transform_matrix = affine_map(ek, ep)
+
+        return self.transform_matrix
+
     def clear(self):
         self.pipeline.clear('all')
         self.clear_contour(self.contours.keys())
         self.image.texture = None
-        self._transform_matrix = None
-
-    @property
-    def transform_matrix(self):
-        if self._transform_matrix is None:
-            ticks = []
-            for j, contour in self.pipeline.contours.items():
-                if not contour.label:
-                    break
-                if contour.label == 'tick':
-                    ticks.append(j)
-
-            if len(ticks) < 3:
-                error_popup = ErrorPopup()
-                error_popup.message = (
-                    'At least 3 ticks are required to construct '
-                    'transform matrix'
-                )
-                error_popup.open()
-                return
-
-            ek = [random.choice(self.contours[tick].points) for tick in ticks]
-            ek = np.array(ek).T
-            ep = np.array(
-                [self.pipeline.contours[tick].coordinate for tick in ticks]
-            ).T
-
-            # Transformation matrix maps the image coordinates to the user
-            # coordinates
-            self._transform_matrix = affine_map(ek, ep)
-
-        return self._transform_matrix
+        self.transform_matrix = None
 
     #---------------------------
     # Contour operations
@@ -258,8 +259,11 @@ class MPLWidget(Widget):
         ]
 
     def map_image_contour_to_user(self, key: int):
-        x = np.array(self.contours[key].points).T
+        self.update_transform_matrix()
+
+        x = np.squeeze(self.pipeline.contours[key].points).T
         x = np.concatenate([x, np.ones([1, x.shape[1]])], axis=0)
+
         return self.transform_matrix @ x
 
     def draw_contours(
@@ -292,7 +296,7 @@ class MPLWidget(Widget):
 
     def replace_contour(self, old: int, new: dict):
         if old in self.contours:
-            self.clear_contour({old})
+            self.clear_contour(old)
 
             for k in new:
                 contour = ContourWidget(k, self.map_cv_contour_to_image(k))
@@ -346,7 +350,10 @@ class MPLWidget(Widget):
 
         self.marked_contours.clear()
 
-    def clear_contour(self, keys: set[int]):
+    def clear_contour(self, keys: int | set[int]):
+        if isinstance(keys, int):
+            keys = [keys]
+
         for key in list(keys):
             self.image.remove_widget(self.contours[key])
             self.contours.pop(key)
